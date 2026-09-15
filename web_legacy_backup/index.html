@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoscaBrain — FlyWire Drosophila Connectome Cockpit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-theme">
+  <!-- Barra Superior de Control -->
+  <header class="top-nav">
+    <div class="brand">
+      <div class="logo-mark">🪰</div>
+      <div class="brand-text">
+        <h1>MOSCA<span class="accent">BRAIN</span></h1>
+        <span class="subtitle">Emulador Funcional de Conectoma (FlyWire Adult Drosophila)</span>
+      </div>
+    </div>
+
+    <div class="header-status">
+      <div class="connection-badge" id="connStatus">
+        <span class="status-dot"></span>
+        <span id="connText">Midiendo FPS...</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">CÓMPUTO:</span>
+        <span class="value" id="topComputeVal" style="color: var(--accent-cyan);">0.0 ms</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">CONECTOMA:</span>
+        <span class="value" style="color: #38bdf8; font-weight: 700;">138.639 N · 15.09M S</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">ESPIGAS:</span>
+        <span class="value" id="topSpikesVal" style="color: var(--accent-gold);">0</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">DOPAMINA:</span>
+        <span class="value" id="topDopamineVal">0.00</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">ESTADO:</span>
+        <span class="value highlight" id="topActionState">INICIANDO</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-dopamine" id="btnRewardManual" title="Activa el clúster PAM de dopamina">
+        <span class="icon">✨</span> Dopamina (+1.0)
+      </button>
+      <button class="btn btn-punish" id="btnPunishManual" title="Activa el clúster PPL1 aversivo">
+        <span class="icon">⚡</span> Aversión (-0.5)
+      </button>
+    </div>
+  </header>
+
+  <!-- Área Principal de Simulación -->
+  <main class="cockpit-container">
+    <!-- Panel Izquierdo: Arena 2D Interactiva -->
+    <section class="panel arena-panel">
+      <div class="panel-header">
+        <div class="title-group">
+          <h2>Arena Virtual</h2>
+          <div class="scenario-selector">
+            <label>Escenario:</label>
+            <select id="scenarioSelect">
+              <option value="alimento_dopamina">🍬 Sacarosa & Dopamina</option>
+              <option value="fototaxis_luz">💡 Fototaxis hacia la Luz</option>
+              <option value="escape_depredador">🦅 Escape de Depredador</option>
+              <option value="olfato_quimico">🧪 Pluma Olfativa</option>
+            </select>
+          </div>
+        </div>
+        <div class="sim-playback-toolbar">
+          <button class="playback-btn pause-btn" id="btnTogglePause" title="Pausar o Reanudar Simulación [Barra Espaciadora]">
+            <span class="icon" id="pauseIcon">⏸️</span>
+            <span id="pauseLabel">Pausar</span>
+          </button>
+          <button class="playback-btn step-btn" id="btnStepFrame" title="Avanzar 1 Paso / Frame cuando está pausado [Tecla .]" disabled>
+            <span class="icon">⏭️</span>
+            <span>+1 Paso</span>
+          </button>
+          <button class="playback-btn test-btn" id="btnToggleTestDrawer" title="Abrir Consola de Log y Acomodar Mosca">
+            <span class="icon">📊</span>
+            <span>Ver Log</span>
+          </button>
+        </div>
+        <div class="tools-toolbar">
+          <button class="tool-btn active" data-tool="food" id="toolFood" title="Colocar gota de sacarosa">🍬 Sacarosa</button>
+          <button class="tool-btn" data-tool="light" id="toolLight" title="Colocar fuente de luz">💡 Luz</button>
+          <button class="tool-btn" data-tool="threat" id="toolThreat" title="Colocar sombra o depredador">🦅 Sombra</button>
+          <button class="tool-btn" data-tool="drag" id="toolDrag" title="Arrastrar y mover cualquier elemento (mosca, comida, luz, sombra). ¡Arrástralo hacia el borde para borrarlo!">✋ Mover / Arrastrar</button>
+          <button class="tool-btn" data-tool="eraser" id="toolEraser" title="Borrador selectivo: Haz clic en cualquier elemento para eliminarlo">🧹 Borrar Selección</button>
+          <button class="tool-btn danger" id="btnClearStimuli" title="Limpiar todos los elementos de la arena (conserva la mosca)">🗑️ Limpiar Todo</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrapper">
+        <canvas id="arenaCanvas" width="800" height="460"></canvas>
+      </div>
+
+      <!-- Barra de Telemetría Inferior de la Mosca -->
+      <div class="telemetry-bar">
+        <div class="telem-item">
+          <span class="telem-label">Velocidad de Avance</span>
+          <div class="meter-bar"><div class="meter-fill" id="meterThrust" style="width: 20%;"></div></div>
+          <span class="telem-val" id="valThrust">0.15</span>
+        </div>
+        <div class="telem-item">
+          <span class="telem-label">Giro Angular (Yaw)</span>
+          <div class="meter-bar" style="position: relative;"><div class="meter-fill steer" id="meterYaw" style="position: absolute; left: 50%; width: 0%;"></div></div>
+          <span class="telem-val" id="valYaw">0.00</span>
+        </div>
+        <div class="telem-item">
+          <span class="telem-label">Batido de Alas (WBF)</span>
+          <span class="telem-badge" id="valWingbeat">0.0 Hz</span>
+        </div>
+        <div class="telem-item">
+          <span class="telem-label">Probóscide (Comer)</span>
+          <span class="telem-badge" id="valProboscis">Retraída</span>
+        </div>
+        <div class="telem-item">
+          <span class="telem-label">Salto de Escape (GF)</span>
+          <span class="telem-badge" id="valEscape">Inactivo</span>
+        </div>
+      </div>
+
+      <!-- Consola / Drawer de Testeo y Log en Pantalla -->
+      <div class="test-log-drawer" id="testLogDrawer">
+        <div class="test-log-header">
+          <div class="test-log-title">
+            <span class="icon">📊</span>
+            <strong>Log de Testeo Cinemático y Neuronal en Vivo</strong>
+            <span class="badge" id="testLogCount">0 pasos</span>
+            <span class="pause-indicator-pill" id="logPauseIndicator">🟢 En Vivo</span>
+          </div>
+          <div class="test-log-actions">
+            <button class="mini-btn" id="btnToggleAutoScroll" title="Alternar desplazamiento automático">
+              <span id="autoScrollIcon">⏸️</span> Auto-Scroll: <strong id="autoScrollStatus">ON</strong>
+            </button>
+            <button class="mini-btn" id="btnClearTestLog" title="Limpiar registros">🧹 Limpiar</button>
+            <button class="mini-btn" id="btnCopyTestLog" title="Copiar al portapapeles en formato TSV">📋 Copiar</button>
+            <button class="mini-btn" id="btnExportTestLogCsv" title="Descargar como archivo CSV">📥 CSV</button>
+            <button class="mini-btn close-drawer-btn" id="btnCloseTestLogDrawer" title="Cerrar consola">✖ Ocultar</button>
+          </div>
+        </div>
+        <div class="test-log-table-wrapper" id="testLogTableWrapper">
+          <table class="test-log-table" id="testLogTable">
+            <thead>
+              <tr>
+                <th>Paso</th>
+                <th>Posición (X, Y)</th>
+                <th>Ángulo θ</th>
+                <th>Dist. Gota</th>
+                <th>Error Ang.</th>
+                <th>Antena (Izq / Der)</th>
+                <th>Contraste</th>
+                <th>Motores (P9 / DNa)</th>
+                <th>Fwd / Yaw</th>
+                <th>Velocidad</th>
+                <th>Comportamiento / Estado</th>
+              </tr>
+            </thead>
+            <tbody id="testLogBody">
+              <tr class="empty-row"><td colspan="11">Inicia la simulación o pulsa "Paso a Paso" para capturar telemetría biofísica...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Barra de Controles del Casino Blackjack (Activa en Modo 21) -->
+      <div class="casino-controls-bar" id="casinoControlsBar" style="display: none;">
+        <button class="btn btn-casino-play" id="btnCasinoPlayRound">
+          ♠️ JUGAR RONDA (CONECTOMA)
+        </button>
+        <button class="btn btn-casino-auto" id="btnCasinoAutoPlay">
+          ⚡ Auto-Juego
+        </button>
+        <div class="casino-status-pill">
+          <span class="status-indicator-dot"></span>
+          <span id="casinoBarStatus">Conectoma listo</span>
+        </div>
+        <div class="casino-streak-pill">
+          <span>Racha: <strong id="casinoBarStreak" style="color: #fbbf24;">0 🔥</strong></span>
+          <span style="margin-left: 10px;">Dopamina: <strong id="casinoBarDopamine" style="color: #10b981;">+0.0 DA</strong></span>
+        </div>
+        <button class="btn btn-casino-reset" id="btnCasinoResetStats" title="Reiniciar racha y estadísticas">
+          🔄 Reiniciar
+        </button>
+      </div>
+    </section>
+
+    <!-- Panel Derecho: Conectoma, Ojo de Mosca, Olfato/Blackjack y Código -->
+    <aside class="panel inspector-panel">
+      <nav class="inspector-tabs">
+        <button class="tab-btn active" data-tab="connectome">🧠 Conectoma en Vivo</button>
+        <button class="tab-btn" data-tab="gamebridge">🎮 Conectar a Juegos</button>
+        <button class="tab-btn" data-tab="vision">👁️ Ojo de Mosca</button>
+        <button class="tab-btn" data-tab="olfaction">🃏 21 / Blackjack & Olfato</button>
+        <button class="tab-btn" data-tab="code">💻 Código Python</button>
+        <button class="tab-btn" data-tab="testlog" id="tabBtnTestLog">🧪 Testeo & Acomodar</button>
+      </nav>
+
+      <!-- Pestaña 1: Grafo Neural del Conectoma -->
+      <div class="tab-content active" id="tabConnectome">
+        <div class="sub-header">
+          <h3>Circuitos Funcionales de FlyWire</h3>
+          <span class="tag">LIF Dynamics + Plasticidad DA</span>
+        </div>
+        <div class="connectome-visualizer">
+          <canvas id="brainCanvas" width="480" height="340"></canvas>
+        </div>
+        <div class="circuit-legend">
+          <span class="legend-item"><span class="dot optic"></span> Lóbulo Óptico</span>
+          <span class="legend-item"><span class="dot antennal"></span> Lóbulo Antenal</span>
+          <span class="legend-item"><span class="dot compass"></span> Complejo Central</span>
+          <span class="legend-item"><span class="dot mb"></span> Mushroom Body</span>
+          <span class="legend-item"><span class="dot pam"></span> Dopamina (PAM/PPL1)</span>
+          <span class="legend-item"><span class="dot motor"></span> Descendentes (DNs)</span>
+        </div>
+        <div class="dopamine-gauge-card">
+          <div class="gauge-header">
+            <span>Nivel de Dopamina Extracelular</span>
+            <span class="gauge-number" id="gaugeDopamineText">0.00 / 3.00</span>
+          </div>
+          <div class="gauge-track">
+            <div class="gauge-fill" id="gaugeDopamineFill" style="width: 0%;"></div>
+          </div>
+          <div class="gauge-footer">
+            <span>Recompensas: <strong id="valRewardsCount">0</strong></span>
+            <span>Castigos: <strong id="valPunishCount">0</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña: Conectar a Videojuegos (GameBridge) -->
+      <div class="tab-content" id="tabGamebridge">
+        <div class="sub-header">
+          <h3>Conector de Pantalla y Teclas (GameBridge)</h3>
+          <span class="tag">Doom / Mario / Flappy / Pong</span>
+        </div>
+        <p class="desc" style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+          Permite que el conectoma juegue a cualquier videojuego alimentando la imagen de pantalla
+          y traduciendo el disparo de sus neuronas motoras en teclas del teclado.
+        </p>
+
+        <div class="config-group">
+          <div class="control-row">
+            <label>Visión del Juego en Ojos Compuestos:</label>
+            <select id="selectStereoMode" style="background: #1e293b; color: #fff; border: 1px solid var(--panel-border); padding: 6px; border-radius: 6px; font-size: 12px;">
+              <option value="split">🌗 Mitad Dividida (Ojo Izq = Mitad Izq | Ojo Der = Mitad Der)</option>
+              <option value="duplicate">👁️ Imagen Completa Duplicada en Ambos Ojos</option>
+            </select>
+          </div>
+
+          <div class="sub-header" style="margin-top: 10px;">
+            <h4>Mapeo de Neuronas a Teclas</h4>
+          </div>
+          <div class="keymap-table" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+            <div class="keymap-item" style="background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--panel-border); display: flex; justify-content: space-between;">
+              <span>Avance (DNp01):</span>
+              <kbd style="background: #334155; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--accent-cyan);">UP / W</kbd>
+            </div>
+            <div class="keymap-item" style="background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--panel-border); display: flex; justify-content: space-between;">
+              <span>Giro Izq (DNp02):</span>
+              <kbd style="background: #334155; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--accent-cyan);">LEFT / A</kbd>
+            </div>
+            <div class="keymap-item" style="background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--panel-border); display: flex; justify-content: space-between;">
+              <span>Giro Der (DNp02):</span>
+              <kbd style="background: #334155; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--accent-cyan);">RIGHT / D</kbd>
+            </div>
+            <div class="keymap-item" style="background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--panel-border); display: flex; justify-content: space-between;">
+              <span>Salto (Giant Fiber):</span>
+              <kbd style="background: #334155; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--accent-green);">SPACE</kbd>
+            </div>
+          </div>
+
+          <div class="sub-header" style="margin-top: 14px;">
+            <h4>Líneas Clave para Modificar tu Juego</h4>
+          </div>
+          <pre class="code-preview" style="font-size: 10px; padding: 10px;"><code id="gameSnippet"># En el bucle de tu juego (Pygame, Gym, etc.):
+keys = bridge.step_frame(screen_array)
+
+if keys["SPACE"]:
+    player.jump()
+
+# Si gana puntos -> ¡Dopamina!
+if score_increased:
+    bridge.reward(amount=1.0, reason="punto")
+
+# Si choca -> ¡Castigo aversivo!
+if crashed:
+    bridge.punish(amount=0.8, reason="choque")
+</code></pre>
+        </div>
+      </div>
+
+      <!-- Pestaña 2: Visión y Omatidios -->
+      <div class="tab-content" id="tabVision">
+        <div class="sub-header">
+          <h3>Retina de Ojo Compuesto (Omatidios)</h3>
+          <span class="tag">Muestreo Hexagonal Retinotópico</span>
+        </div>
+        <div class="ommatidia-monitor">
+          <div class="eye-label-row">
+            <span>Ojo Izquierdo</span>
+            <span>Ojo Derecho</span>
+          </div>
+          <div class="ommatidia-grid" id="ommatidiaGrid"></div>
+        </div>
+        <div class="config-group">
+          <div class="control-row">
+            <label>Campo Visual Panorámico (FOV):</label>
+            <div class="slider-val-box">
+              <input type="range" id="sliderFov" min="90" max="360" value="270" step="10">
+              <span id="labelFov">270°</span>
+            </div>
+          </div>
+          <div class="control-row">
+            <label>Número de Omatidios:</label>
+            <div class="slider-val-box">
+              <input type="range" id="sliderOmmatidia" min="16" max="64" value="32" step="4">
+              <span id="labelOmmatidia">32</span>
+            </div>
+          </div>
+          <div class="control-row">
+            <label>Sensibilidad de Fotorreceptores:</label>
+            <div class="slider-val-box">
+              <input type="range" id="sliderSens" min="0.2" max="2.5" value="1.0" step="0.1">
+              <span id="labelSens">1.0x</span>
+            </div>
+          </div>
+          <div class="alert-box" id="loomingAlert" style="display: none;">
+            ⚠️ ¡SEÑAL LOOMING DETECTADA! (Sombra amenazante en rápida expansión)
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña 3: 21 / Blackjack con Olfato -->
+      <div class="tab-content" id="tabOlfaction">
+        <div class="sub-header">
+          <h3>Conectoma Neural en Vivo</h3>
+          <span class="tag">MBONs + Clúster PAM</span>
+        </div>
+
+        <!-- Conectoma en vivo integrado en la pantalla lateral -->
+        <div class="connectome-visualizer" style="height: 130px; margin-bottom: 6px;">
+          <canvas id="bjBrainCanvas" width="480" height="130"></canvas>
+        </div>
+
+        <!-- Barritas de Dopamina por Seguir Jugando -->
+        <div class="dopamine-gauge-card" style="margin-bottom: 8px; padding: 8px 12px;">
+          <div class="gauge-header">
+            <span>✨ Nivel de Dopamina Extracelular</span>
+            <span class="gauge-number" id="bjGaugeDopamineText">0.00 / 3.00</span>
+          </div>
+          <div class="gauge-track">
+            <div class="gauge-fill" id="bjGaugeDopamineFill" style="width: 0%;"></div>
+          </div>
+          
+          <div class="gauge-header" style="margin-top: 6px;">
+            <span>🔥 Dopamina por Racha</span>
+            <span class="gauge-number" id="bjStreakRewardText">+0.0 DA</span>
+          </div>
+          <div class="gauge-track" style="background: rgba(251, 191, 36, 0.12);">
+            <div class="gauge-fill" id="bjDopamineStreakFill" style="width: 0%; background: linear-gradient(90deg, #d97706, #f59e0b, #fbbf24); box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);"></div>
+          </div>
+
+          <div class="gauge-footer" style="margin-top: 4px;">
+            <span>Victorias: <strong id="bjWinsCount" style="color: #10b981;">0</strong></span>
+            <span>Derrotas: <strong id="bjLossesCount" style="color: #f43f5e;">0</strong></span>
+            <span>Racha: <strong id="bjStreakCount" style="color: #fbbf24;">0 🔥</strong></span>
+          </div>
+        </div>
+
+        <!-- Mesa y Controles de Blackjack -->
+        <div class="blackjack-card">
+          <button class="btn btn-primary full-width" id="btnPlayBlackjackRound" style="margin-bottom: 8px; font-size: 13px; font-weight: bold; background: linear-gradient(135deg, #fbbf24, #d97706); color: #0f172a; box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);">
+            ♠️ Jugar Ronda con el Conectoma
+          </button>
+          <div class="table-felt">
+            <div class="hand-box">
+              <span class="hand-title">Mano Croupier:</span>
+              <div class="cards-row" id="dealerCards"><span class="card">?</span><span class="card">?</span></div>
+              <span class="hand-score" id="dealerScore">Puntaje: --</span>
+            </div>
+            <div class="vs-badge">VS</div>
+            <div class="hand-box">
+              <span class="hand-title">Mano Mosca (Cerebro):</span>
+              <div class="cards-row" id="flyCards"><span class="card">?</span><span class="card">?</span></div>
+              <span class="hand-score" id="flyScore">Puntaje: --</span>
+            </div>
+          </div>
+          <div class="game-result-banner" id="gameResultBanner" style="margin-top: 6px;">Pulsa "Jugar Ronda" para que el conectoma tome la decisión</div>
+          <div class="decision-log" id="decisionLog" style="margin-top: 6px;"></div>
+        </div>
+
+        <div class="sub-header" style="margin-top: 16px;">
+          <h3>Dispensador de Aromas Químicos</h3>
+        </div>
+        <div class="odor-buttons">
+          <button class="btn-odor" data-odor="vinagre_manzana">🍎 Vinagre de Manzana</button>
+          <button class="btn-odor" data-odor="sacarosa_azucar">🍬 Sacarosa Líquida</button>
+          <button class="btn-odor" data-odor="platano_fruta">🍌 Éster de Plátano</button>
+          <button class="btn-odor" data-odor="humo_repelente">🔥 Humo Aversivo</button>
+          <button class="btn-odor" data-odor="aire_limpio">💨 Aire Limpio</button>
+        </div>
+      </div>
+
+      <!-- Pestaña 4: Generador de Código Python -->
+      <div class="tab-content" id="tabCode">
+        <div class="sub-header">
+          <h3>Código Python Equivalente</h3>
+          <button class="btn btn-sm" id="btnCopyCode">📋 Copiar Código</button>
+        </div>
+        <pre class="code-preview"><code id="codeSnippet">from moscabrain import FlyAgent
+
+# 1. Instanciar agente con conectoma de FlyWire
+fly = FlyAgent()
+
+# 2. Configurar visión
+fly.vision.configure(fov_horizontal=270, ommatidia_count=32)
+
+# 3. Inyectar dopamina o trigger
+fly.reward(amount=1.0, reason="azucar")
+
+# 4. Ciclo sensorial-motor
+action = fly.step()
+print(f"Estado: {action.state.name}, Empuje: {action.forward_thrust}")
+</code></pre>
+      </div>
+
+      <!-- Pestaña 5: Herramienta de Testeo, Acomodar Mosca y Log -->
+      <div class="tab-content" id="tabTestlog">
+        <div class="sub-header">
+          <h3>Herramienta de Testeo y Postura</h3>
+          <span class="tag" id="testStatusTag">🟢 En Simulación</span>
+        </div>
+
+        <!-- Bloque 1: Controles de Ejecución y Pausa -->
+        <div class="test-card">
+          <div class="test-card-header">
+            <h4>Control de Ejecución</h4>
+          </div>
+          <div class="test-playback-row">
+            <button class="btn btn-playback-main" id="sideBtnTogglePause">
+              <span class="icon" id="sidePauseIcon">⏸️</span>
+              <span id="sidePauseLabel">Pausar</span>
+            </button>
+            <button class="btn btn-playback-step" id="sideBtnStepFrame" disabled>
+              <span class="icon">⏭️</span>
+              <span>+1 Paso (Frame)</span>
+            </button>
+            <button class="btn btn-playback-reset" id="sideBtnResetBias" title="Restablecer potenciales a reposo y borrar sesgos">
+              <span>🔄 Reset Bias</span>
+            </button>
+          </div>
+          <p class="test-hint">Atajo: Pulsa <kbd>Espacio</kbd> para pausar/reanudar y <kbd>.</kbd> para avanzar 1 paso.</p>
+        </div>
+
+        <!-- Bloque 2: Acomodar a la Mosca -->
+        <div class="test-card">
+          <div class="test-card-header">
+            <h4>Acomodar a la Mosca (Postura y Posición)</h4>
+            <span class="test-badge-info" id="flyPoseCoordsBadge">(400, 300) · 0°</span>
+          </div>
+          <div class="pose-controls">
+            <div class="control-row">
+              <label>Posición X (px):</label>
+              <input type="range" id="sliderFlyX" min="20" max="780" value="400" step="1">
+              <input type="number" id="numFlyX" min="20" max="780" value="400" class="mini-num-input">
+            </div>
+            <div class="control-row">
+              <label>Posición Y (px):</label>
+              <input type="range" id="sliderFlyY" min="20" max="440" value="300" step="1">
+              <input type="number" id="numFlyY" min="20" max="440" value="300" class="mini-num-input">
+            </div>
+            <div class="control-row">
+              <label>Ángulo de Orientación θ:</label>
+              <input type="range" id="sliderFlyAngle" min="-180" max="180" value="0" step="1">
+              <div class="angle-display">
+                <input type="number" id="numFlyAngle" min="-180" max="180" value="0" class="mini-num-input">
+                <span class="cardinal-badge" id="cardinalBadge">0° (Este)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pose-presets-title">Presets de Orientación Respecto a la Gota:</div>
+          <div class="pose-presets-grid">
+            <button class="btn-preset" id="btnPreset90Right" title="Coloca la mosca mirando a 90° hacia la derecha de la gota">
+              📐 90° Lateral Der. (Reportado)
+            </button>
+            <button class="btn-preset" id="btnPreset90Left" title="Coloca la mosca mirando a 90° hacia la izquierda de la gota">
+              📐 90° Lateral Izq.
+            </button>
+            <button class="btn-preset" id="btnPreset0Front" title="Coloca la mosca mirando directamente a la gota">
+              🎯 0° Frontal (De Frente)
+            </button>
+            <button class="btn-preset" id="btnPreset180Back" title="Coloca la mosca de espaldas a la gota">
+              ↩️ 180° Opuesta (De Espaldas)
+            </button>
+            <button class="btn-preset highlight" id="btnPresetSpawnFoodFront" title="Crea una gota de sacarosa a 80px frente a la mosca">
+              🍬 Crear Gota Frente a Mosca
+            </button>
+          </div>
+        </div>
+
+        <!-- Bloque 3: Telemetría Instantánea del Paso -->
+        <div class="test-card">
+          <div class="test-card-header">
+            <h4>Lectura Sensorial y Motora Instantánea</h4>
+          </div>
+          <div class="instant-telemetry-grid">
+            <div class="metric-box">
+              <span class="metric-label">Distancia a Gota</span>
+              <span class="metric-val" id="instDistFood">-- px</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Error Angular</span>
+              <span class="metric-val" id="instAngleErr">--°</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Contraste Olor</span>
+              <span class="metric-val" id="instContrast">--</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Antenas (Izq / Der)</span>
+              <span class="metric-val" id="instAntennaLR">-- / --</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Motores P9 (L / R)</span>
+              <span class="metric-val" id="instP9">-- / --</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Giro DNa (L / R)</span>
+              <span class="metric-val" id="instDNa">-- / --</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bloque 4: Registros Recientes del Log -->
+        <div class="test-card">
+          <div class="test-card-header">
+            <h4>Historial Reciente del Log</h4>
+            <button class="mini-btn" id="btnSideOpenLogDrawer">📊 Ver Tabla Completa</button>
+          </div>
+          <div class="mini-log-list" id="miniLogList">
+            <div class="empty-hint">El log registrará cada paso aquí...</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

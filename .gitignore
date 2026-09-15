@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Node / Frontend
+node_modules/
+*/node_modules/
+.next/
+out/
+.env.local
+
+# Cache & Tests
+.pytest_cache/
+.uv-cache/
+.coverage
+
+# Scratch & IDE
+scratch/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

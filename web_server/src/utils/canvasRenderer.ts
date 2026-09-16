@@ -183,11 +183,6 @@ export function renderArena(
         ctx.moveTo(threat.x, threat.y - 6);
         ctx.lineTo(threat.x, threat.y + 6);
         ctx.stroke();
-
-        ctx.fillStyle = "#38bdf8";
-        ctx.font = "600 10px JetBrains Mono, monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("FLECHAS TECLADO", threat.x, threat.y - threat.radius - 8);
         ctx.restore();
       }
     });

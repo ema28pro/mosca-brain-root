@@ -141,6 +141,10 @@ def _process_neural_step(
     """Ejecuta la inferencia biofísica sobre el conectoma real (FlyWire o BANC)."""
     t0 = time.perf_counter()
 
+    # Reabsorción y decaimiento homeostático de dopamina hacia 0.0 (~1.5s)
+    if hasattr(fly, "_dopamine_level"):
+        fly._dopamine_level *= 0.95
+
     if getattr(fly, "connectome_mode", "flywire_brain") == "banc":
         l_arr = np.asarray(left_eye, dtype=np.float32) if left_eye else np.zeros(84, dtype=np.float32)
         r_arr = np.asarray(right_eye, dtype=np.float32) if right_eye else np.zeros(84, dtype=np.float32)
@@ -155,12 +159,12 @@ def _process_neural_step(
 
         # Neuromodulación por aversión / dopamina negativa
         da_level = round(float(fly.dopamine_level), 3)
-        arousal = float(np.clip(max(0.0, -da_level * 1.5), 0.0, 1.8))
-        has_threat = (danger_level > 0.38 or arousal > 0.35)
+        arousal = float(np.clip(max(0.0, -da_level * 1.0), 0.0, 1.0))
+        has_threat = (danger_level > 0.42 or arousal > 0.5)
 
-        lateral_drive = diff_lr * 90.0
-        forward_drive = max(10.0, (mean_l + mean_r) * 60.0)
-        aversive_drive = arousal * 120.0 + (danger_level * 60.0)
+        lateral_drive = diff_lr * 80.0
+        forward_drive = max(10.0, (mean_l + mean_r) * 50.0)
+        aversive_drive = arousal * 80.0 + (danger_level * 40.0)
 
         threats = [{"x": 300.0, "y": 300.0, "speed": 15.0}] if has_threat else []
         action = fly.step(
@@ -175,20 +179,20 @@ def _process_neural_step(
         l_rate = fly.banc_telemetry.get("left_motor_rate_hz", 0.0)
         r_rate = fly.banc_telemetry.get("right_motor_rate_hz", 0.0)
         jump_rate = fly.banc_telemetry.get("jump_motor_rate_hz", 0.0)
-        jump_active = bool(fly.banc_telemetry.get("jump_motor_active", False) or action.escape_jump or arousal > 0.4)
+        jump_active = bool(fly.banc_telemetry.get("jump_motor_active", False) or action.escape_jump)
 
-        # Cálculo biológico de puntuaciones motoras con amplio rango dinámico
+        # Cálculo biológico de puntuaciones motoras equilibradas
         panic_jitter = (np.random.random() - 0.5) * arousal * 2.0
-        score_left = max(0.05, 0.7 + (mean_l * 7.0) + (l_rate * 0.15) + max(0.0, diff_lr * 12.0) + max(0.0, panic_jitter))
-        score_right = max(0.05, 0.7 + (mean_r * 7.0) + (r_rate * 0.15) + max(0.0, -diff_lr * 12.0) + max(0.0, -panic_jitter))
-        score_rot = max(0.05, (7.5 if jump_active else 0.3) + (jump_rate * 0.25) + (arousal * 5.0))
+        score_left = max(0.05, 0.9 + (mean_l * 6.0) + (l_rate * 0.1) + max(0.0, diff_lr * 8.0) + max(0.0, panic_jitter))
+        score_right = max(0.05, 0.9 + (mean_r * 6.0) + (r_rate * 0.1) + max(0.0, -diff_lr * 8.0) + max(0.0, -panic_jitter))
+        score_rot = max(0.05, (3.2 if jump_active else 0.35) + (jump_rate * 0.15) + (arousal * 2.0))
 
         # Inhibición de caída rápida ante aversión/pánico
-        drop_inhibition = 1.0 / (1.0 + arousal * 5.5 + (3.0 if danger_level > 0.35 else 0.0))
-        score_drop = max(0.05, (1.2 + (m_rate * 0.2) + ((mean_l + mean_r) * 2.5)) * drop_inhibition)
+        drop_inhibition = 1.0 / (1.0 + arousal * 3.0 + (2.0 if danger_level > 0.4 else 0.0))
+        score_drop = max(0.05, (1.2 + (m_rate * 0.15) + ((mean_l + mean_r) * 2.0)) * drop_inhibition)
 
         scores = np.array([score_left, score_right, score_rot, score_drop], dtype=np.float32)
-        temp = float(np.clip(0.75 + arousal * 1.3, 0.4, 3.2))
+        temp = float(np.clip(0.8 + arousal * 0.8, 0.5, 2.5))
         exp_scores = np.exp((scores - np.max(scores)) / temp)
         probs = (exp_scores / np.sum(exp_scores)).tolist()
 
@@ -365,6 +369,7 @@ async def tetris_websocket_endpoint(websocket: WebSocket):
         await websocket.send_json({
             "type": "connected",
             "message": "MoscaBrain Tetris Connectome Ready",
+            "mode": fly.connectome_mode,
             "neurons": neurons,
             "synapses": synapses,
             "dopamine": dopamine,

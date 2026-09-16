@@ -112,23 +112,25 @@ print(f"Telemetría motoneuronas: {agent.banc_telemetry}")
 
 El servidor de Tetris corre en el **puerto 8001** y expone un WebSocket de alta frecuencia (`ws://localhost:8001/ws/tetris`) para controlar partidas de Tetris mediante la red biológica.
 
-### A. Comando para Iniciar el Servidor
+### A. Comando para Iniciar el Servidor (Usa BANC por defecto)
 Ejecuta en la terminal (`c:\Users\Fixer\Desktop\Mosca`):
 ```powershell
 python -m server.tetris_server
 ```
+*Por defecto arranca en modo **BANC** (alta eficiencia, consumo de apenas ~102 MB de RAM y arranque instantáneo).*
 
 ### B. Cómo Seleccionar el Agente para Tetris
 
 #### Método 1: Al arrancar mediante variable de entorno
 En PowerShell (Windows):
 ```powershell
-# Para usar BANC Whole-CNS (Cerebro + VNC):
+# BANC Whole-CNS (Predeterminado - ultra liviano):
 $env:AGENT_MODE="banc"; python -m server.tetris_server
 
-# Para usar FlyWire (Cerebro cefálico 138k neuronas):
+# FlyWire Cerebro (Carga las 15M de sinapsis completas):
 $env:AGENT_MODE="flywire_brain"; python -m server.tetris_server
 ```
+
 
 #### Método 2: En caliente con el servidor en marcha (vía REST)
 ```powershell

@@ -27,9 +27,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Modo de agente configurable por variable de entorno: AGENT_MODE=banc o AGENT_MODE=flywire_brain
-INITIAL_MODE = os.environ.get("AGENT_MODE", "flywire_brain")
+# Modo de agente configurable por variable de entorno: AGENT_MODE=banc (predeterminado) o AGENT_MODE=flywire_brain
+INITIAL_MODE = os.environ.get("AGENT_MODE", "banc")
 fly = FlyAgent(connectome_mode=INITIAL_MODE)
+
 
 
 

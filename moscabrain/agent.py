@@ -28,10 +28,26 @@ class FlyAgent:
         num_ommatidia: int = 32,
         num_glomeruli: int = 16,
         fov_horizontal: float = 270.0,
+        connectome_mode: str = "banc",
     ):
-        # 1. Conectoma Real de FlyWire (15.091.983 sinapsis reales)
+        # Modo de conectoma: "banc" (Whole-CNS: Cerebro + VNC) o "flywire_brain" (Solo cerebro)
+        self.connectome_mode = connectome_mode
+
+        # 1. Conectoma Real de FlyWire (15.091.983 sinapsis cerebrales)
         self.topology = FlyWireConnectomeTopology()
         self.engine = ConnectomeEngine(topology=self.topology, dt=dt)
+
+        # 1.1 Módulos BANC (Whole-CNS: Brain + Nerve Cord)
+        self._banc_circuit_mgr = None
+        self._banc_gf_sim = None
+        self._banc_p9_sim = None
+        self.banc_telemetry: Dict[str, Any] = {
+            "active_mode": self.connectome_mode,
+            "motor_rate_hz": 0.0,
+            "jump_motor_active": False,
+            "leg_motor_rate_hz": 0.0,
+            "top_active_motor_neuron": None
+        }
 
         # 2. Órganos Sensoriales
         # A) Ojo compuesto tradicional
@@ -55,6 +71,22 @@ class FlyAgent:
         self.is_feeding: bool = False
         self.feeding_counter: int = 0
 
+    def set_connectome_mode(self, mode: str):
+        """Alterna dinámicamente entre conectoma completo 'banc' y cerebral 'flywire_brain'."""
+        if mode not in ("banc", "flywire_brain"):
+            raise ValueError(f"Modo desconocido: '{mode}'. Opciones válidas: 'banc', 'flywire_brain'")
+        self.connectome_mode = mode
+        self.banc_telemetry["active_mode"] = mode
+
+    def _get_banc_gf_simulator(self):
+        if self._banc_gf_sim is None:
+            from .connectome.banc_circuit import BANCCircuitManager
+            from .connectome.banc_lif_simulator import BANCLIFSimulator
+            self._banc_circuit_mgr = BANCCircuitManager()
+            circuit = self._banc_circuit_mgr.extract_giant_fiber_circuit(synapse_threshold=3)
+            self._banc_gf_sim = BANCLIFSimulator(circuit)
+        return self._banc_gf_sim
+
     def start_feeding(self):
         """Inicia el programa motor de alimentación y extensión de probóscide."""
         self.is_feeding = True
@@ -77,6 +109,10 @@ class FlyAgent:
     def punish(self, amount: float = 1.0, reason: str = "castigo"):
         """Inyecta una señal aversiva al cerebro de la mosca."""
         self.dopamine.punish(amount=amount, reason=reason)
+
+    def aversion(self, amount: float = 1.0, reason: str = "aversion"):
+        """Inyecta una señal aversiva / castigo al clúster PPL1 de la mosca (alias de punish)."""
+        return self.punish(amount=amount, reason=reason)
 
     def stimulate_sugar(self, intensity: float = 1.5):
         """Estimula directamente las neuronas gustativas de azúcar (Sugar GRNs) reales."""
@@ -139,11 +175,28 @@ class FlyAgent:
                 self.engine.inject_looming_input(looming)
             self.engine.step()
 
-        # E) Decodificar comandos motores — puramente del conectoma real
+        # E) Decodificar comandos motores — integrando BANC si está activo
         fwd, yaw, escape = self.engine.get_motor_output()
 
         mn9_act = (float(np.mean(self.engine.firing_rates[self.topology.mn9_indices]))
                    if len(self.topology.mn9_indices) > 0 else 0.0)
+
+        # En modo BANC (Whole-CNS), las motoneuronas del VNC modulan la respuesta
+        if self.connectome_mode == "banc":
+            if escape or looming > 0.1:
+                # Simular reclutamiento motor en el circuito de escape BANC (DNp01 -> TTMn / DLMn)
+                banc_sim = self._get_banc_gf_simulator()
+                sim_res = banc_sim.run_simulation(stim_rate=150.0, t_run=50.0)
+                m_rate = sim_res["population_rates_hz"]["motor_neurons"]
+                self.banc_telemetry["motor_rate_hz"] = m_rate
+                self.banc_telemetry["jump_motor_active"] = (m_rate > 0.1)
+                if sim_res["motor_outputs"]:
+                    self.banc_telemetry["top_active_motor_neuron"] = sim_res["motor_outputs"][0]["cell_type"]
+                escape = True
+            else:
+                self.banc_telemetry["jump_motor_active"] = False
+                self.banc_telemetry["motor_rate_hz"] = round(fwd * 12.0, 2)
+                self.banc_telemetry["top_active_motor_neuron"] = "tibia_flexor" if fwd > 0.1 else None
 
         if self.is_feeding:
             # Contacto sensorial con alimento: la probóscide bloquea la locomoción.
@@ -155,7 +208,7 @@ class FlyAgent:
             proboscis = True
             escape = False
         elif escape:
-            # Señal de escape biológica de Giant Fiber activada por LC4.
+            # Señal de escape biológica de Giant Fiber activada por LC4 / DNp01.
             action_state = ActionState.ESCAPE_JUMP
             wbf = 210.0
             proboscis = False

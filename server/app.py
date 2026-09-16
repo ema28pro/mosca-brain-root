@@ -121,6 +121,46 @@ async def configure_olfaction(req: OlfactionRequest):
     }
 
 
+class ConnectomeModeRequest(BaseModel):
+    mode: str  # "banc" or "flywire_brain"
+
+
+@app.get("/api/connectome/mode")
+async def get_connectome_mode():
+    """Consulta el modo de conectoma activo (BANC Whole-CNS vs FlyWire Brain-only)."""
+    return {
+        "current_mode": getattr(arena.agent, "connectome_mode", "banc"),
+        "available_modes": [
+            {
+                "id": "banc",
+                "name": "BANC Whole-CNS (Brain + VNC Motor Circuits)",
+                "description": "188k neuronas continuas (Cerebro + Cuello + VNC) hasta motoneuronas identificadas de patas y alas.",
+                "dataset": "BANC v888 (Nature 2026)"
+            },
+            {
+                "id": "flywire_brain",
+                "name": "FlyWire Brain-Only (FAFB / v783)",
+                "description": "138k neuronas cerebrales (Lóbulos ópticos, antenales, MB, Complejo Central, neuronas descendentes).",
+                "dataset": "FlyWire v783 (Nature 2024)"
+            }
+        ],
+        "banc_telemetry": getattr(arena.agent, "banc_telemetry", {})
+    }
+
+
+@app.post("/api/connectome/mode")
+async def set_connectome_mode(req: ConnectomeModeRequest):
+    """Alterna en tiempo real entre BANC (Whole-CNS) y FlyWire (Brain-Only)."""
+    if req.mode not in ("banc", "flywire_brain"):
+        raise HTTPException(status_code=400, detail=f"Modo inválido: {req.mode}. Use 'banc' o 'flywire_brain'.")
+    arena.agent.set_connectome_mode(req.mode)
+    return {
+        "success": True,
+        "current_mode": arena.agent.connectome_mode,
+        "message": f"Conectoma activo cambiado a: {req.mode}"
+    }
+
+
 @app.post("/api/scenario")
 async def switch_scenario(req: ScenarioRequest):
     arena.load_scenario(req.scenario)
@@ -447,6 +487,8 @@ async def websocket_endpoint(websocket: WebSocket):
             state["is_paused"] = is_simulation_paused
             state["action"] = action.to_dict()
             state["compute_ms"] = compute_ms
+            state["connectome_mode"] = getattr(arena.agent, "connectome_mode", "banc")
+            state["banc_telemetry"] = getattr(arena.agent, "banc_telemetry", {})
             await websocket.send_json(state)
 
             # Pacing dinámico para garantizar 25-30 FPS estables con latencia mínima
@@ -475,4 +517,16 @@ if web_dir.exists():
     @app.get("/")
     async def serve_index():
         return FileResponse(str(web_dir / "index.html"))
+
+# Montar simulador conectómico BANC
+try:
+    from server.banc_api import app as banc_subapp
+    app.mount("/banc", banc_subapp)
+    # También redirigir /api/banc al subapp para compatibilidad
+    @app.get("/banc-preview")
+    async def serve_banc_preview():
+        banc_index = web_dir / "banc" / "index.html"
+        return FileResponse(str(banc_index))
+except Exception as e:
+    print(f"BANC mount notice: {e}")
 

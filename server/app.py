@@ -516,9 +516,11 @@ async def websocket_endpoint(websocket: WebSocket):
             connected_websockets.remove(websocket)
 
 
-# Servir la interfaz web estática de React (busca primero 'dist' de Vite, o 'web')
+# Servir la interfaz web estática de React (busca primero 'dist' de la raíz, 'web_server/dist', o 'web')
 root_dir = Path(__file__).resolve().parent.parent
 dist_dir = root_dir / "dist"
+if not dist_dir.exists():
+    dist_dir = root_dir / "web_server" / "dist"
 web_dir = dist_dir if dist_dir.exists() else (root_dir / "web")
 
 if web_dir.exists():

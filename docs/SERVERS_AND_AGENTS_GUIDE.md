@@ -20,11 +20,21 @@ El servidor general integra todo el ecosistema en un solo proceso FastAPI en el 
 
 ### A. Comando para Iniciar
 Ejecuta en la terminal de la raíz del proyecto (`c:\Users\Fixer\Desktop\Mosca`):
+
+**Comando Recomendado (Estable y sin sobrecarga de archivos):**
 ```powershell
-python -m uvicorn server.app:app --reload --port 8000
+python -m uvicorn server.app:app --port 8000
 ```
-> [!IMPORTANT]
-> Si el servidor ya estaba abierto previamente y observas errores `404 Not Found` en la consola del navegador, presiona **`Ctrl + C`** en la terminal para detener el proceso antiguo y vuelve a ejecutar el comando. Esto asegurará que Uvicorn cargue los endpoints actualizados.
+
+**Si deseas modo Auto-Reload (sin agotar recursos de Windows):**
+```powershell
+python -m uvicorn server.app:app --reload --reload-dir server --reload-dir moscabrain --port 8000
+```
+
+> [!WARNING]
+> **Solución a `OSError: [WinError 1450] Recursos insuficientes en el sistema`**:  
+> Si usas `--reload` sin especificar carpetas, Windows intenta rastrear recursivamente más de 1.000 archivos de Python (incluyendo la carpeta `eons_fly_brain`), lo que agota los descriptores del sistema de archivos de Windows (NTFS). Usa siempre el comando sin `--reload` o especificando `--reload-dir server --reload-dir moscabrain`.
+
 
 ### B. Cómo Elegir qué Agente Usar
 

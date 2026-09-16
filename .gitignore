@@ -18,9 +18,6 @@ out/
 .uv-cache/
 .coverage
 
-# External & Submodules
-eons_fly_brain/
-
 # Scratch & IDE
 scratch/
 .vscode/
@@ -29,7 +26,6 @@ scratch/
 # Data downloads & results
 *.feather
 data/banc/*.feather
-data/banc/results/
 
 # OS
 .DS_Store

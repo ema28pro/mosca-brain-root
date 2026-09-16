@@ -12,9 +12,12 @@ from .dopamine.system import DopamineSystem
 from .body.motor import ActionOutput, ActionState
 from .connectome.circuits import FlyWireConnectomeTopology
 from .connectome.dynamics import ConnectomeEngine
+from .connectome.banc_circuit import BANCCircuitManager
+from .connectome.banc_lif_simulator import BANCLIFSimulator, DEFAULT_PHYSIOLOGY_PARAMS
+from .connectome.banc_experiment import run_full_banc_evaluation
 from .bridge.controller import GameBridge
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __all__ = [
     "FlyAgent",
     "SimulationArena",
@@ -28,5 +31,9 @@ __all__ = [
     "ActionState",
     "FlyWireConnectomeTopology",
     "ConnectomeEngine",
+    "BANCCircuitManager",
+    "BANCLIFSimulator",
+    "DEFAULT_PHYSIOLOGY_PARAMS",
+    "run_full_banc_evaluation",
     "GameBridge",
 ]

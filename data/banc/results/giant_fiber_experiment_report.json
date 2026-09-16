@@ -1,0 +1,501 @@
+{
+  "experiment_name": "BANC Sensorimotor Simulation - Giant Fiber (DNp01) Escape Circuit",
+  "circuit_id": "giant_fiber",
+  "circuit_metadata": {
+    "name": "Giant Fiber (DNp01) Escape Circuit",
+    "total_neurons": 263,
+    "total_edges": 1112,
+    "total_synapses": 10490,
+    "stimulated_neurons_count": 2,
+    "motor_neurons_count": 210,
+    "interneurons_count": 51,
+    "provenance": {
+      "dataset": "BANC (Brain and Nerve Cord)",
+      "materialization": "v888",
+      "synapse_version": "v3 (size >= 10)",
+      "source_bucket": "gs://lee-lab_brain-and-nerve-cord-fly-connectome/compiled_data/banc_888/",
+      "reference": "Bates, Phelps, Kim, Yang et al. (Nature 2026)"
+    }
+  },
+  "simulation_parameters": {
+    "v_0_mV": -52.0,
+    "v_rst_mV": -52.0,
+    "v_th_mV": -45.0,
+    "t_mbr_ms": 20.0,
+    "tau_syn_ms": 5.0,
+    "t_rfc_ms": 2.2,
+    "t_dly_ms": 1.8,
+    "w_syn_mV": 0.35,
+    "weight_scale": 1.5,
+    "seed": 42,
+    "dt_ms": 0.2,
+    "duration_ms": 500.0
+  },
+  "results": {
+    "baseline_summary": {
+      "descending_inputs": 0.0,
+      "vnc_interneurons": 0.0,
+      "motor_neurons": 0.0,
+      "network_overall": 0.0
+    },
+    "stimulation_rate_curve": [
+      {
+        "stim_rate_hz": 0.0,
+        "descending_rate_hz": 0.0,
+        "vnc_interneuron_rate_hz": 0.0,
+        "motor_rate_hz": 0.0,
+        "motor_delta_from_baseline_hz": 0.0,
+        "total_spikes": 0,
+        "network_status": "silent_network"
+      },
+      {
+        "stim_rate_hz": 25.0,
+        "descending_rate_hz": 31.0,
+        "vnc_interneuron_rate_hz": 0.0,
+        "motor_rate_hz": 0.0,
+        "motor_delta_from_baseline_hz": 0.0,
+        "total_spikes": 31,
+        "network_status": "healthy"
+      },
+      {
+        "stim_rate_hz": 50.0,
+        "descending_rate_hz": 54.0,
+        "vnc_interneuron_rate_hz": 0.08,
+        "motor_rate_hz": 0.0,
+        "motor_delta_from_baseline_hz": 0.0,
+        "total_spikes": 56,
+        "network_status": "healthy"
+      },
+      {
+        "stim_rate_hz": 75.0,
+        "descending_rate_hz": 80.0,
+        "vnc_interneuron_rate_hz": 0.24,
+        "motor_rate_hz": 0.01,
+        "motor_delta_from_baseline_hz": 0.01,
+        "total_spikes": 87,
+        "network_status": "healthy"
+      },
+      {
+        "stim_rate_hz": 100.0,
+        "descending_rate_hz": 102.0,
+        "vnc_interneuron_rate_hz": 0.35,
+        "motor_rate_hz": 0.02,
+        "motor_delta_from_baseline_hz": 0.02,
+        "total_spikes": 113,
+        "network_status": "healthy"
+      },
+      {
+        "stim_rate_hz": 150.0,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 2.0,
+        "motor_rate_hz": 0.68,
+        "motor_delta_from_baseline_hz": 0.68,
+        "total_spikes": 270,
+        "network_status": "healthy"
+      },
+      {
+        "stim_rate_hz": 200.0,
+        "descending_rate_hz": 173.0,
+        "vnc_interneuron_rate_hz": 3.92,
+        "motor_rate_hz": 1.15,
+        "motor_delta_from_baseline_hz": 1.15,
+        "total_spikes": 394,
+        "network_status": "healthy"
+      },
+      {
+        "stim_rate_hz": 250.0,
+        "descending_rate_hz": 196.0,
+        "vnc_interneuron_rate_hz": 6.04,
+        "motor_rate_hz": 1.65,
+        "motor_delta_from_baseline_hz": 1.65,
+        "total_spikes": 523,
+        "network_status": "healthy"
+      }
+    ],
+    "weight_scale_sensitivity": [
+      {
+        "weight_scale": 0.5,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 0.0,
+        "motor_rate_hz": 0.0,
+        "total_spikes": 148,
+        "network_status": "healthy"
+      },
+      {
+        "weight_scale": 1.0,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 0.35,
+        "motor_rate_hz": 0.0,
+        "total_spikes": 157,
+        "network_status": "healthy"
+      },
+      {
+        "weight_scale": 1.5,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 2.0,
+        "motor_rate_hz": 0.68,
+        "total_spikes": 270,
+        "network_status": "healthy"
+      },
+      {
+        "weight_scale": 2.0,
+        "descending_rate_hz": 147.0,
+        "vnc_interneuron_rate_hz": 8.0,
+        "motor_rate_hz": 2.86,
+        "total_spikes": 651,
+        "network_status": "healthy"
+      }
+    ],
+    "synapse_cutoff_sensitivity": [
+      {
+        "synapse_cutoff": 1,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 2.0,
+        "motor_rate_hz": 0.68,
+        "total_spikes": 270,
+        "network_status": "healthy"
+      },
+      {
+        "synapse_cutoff": 3,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 2.0,
+        "motor_rate_hz": 0.68,
+        "total_spikes": 270,
+        "network_status": "healthy"
+      },
+      {
+        "synapse_cutoff": 5,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 1.33,
+        "motor_rate_hz": 0.63,
+        "total_spikes": 248,
+        "network_status": "healthy"
+      },
+      {
+        "synapse_cutoff": 8,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 0.82,
+        "motor_rate_hz": 0.37,
+        "total_spikes": 208,
+        "network_status": "healthy"
+      },
+      {
+        "synapse_cutoff": 10,
+        "descending_rate_hz": 148.0,
+        "vnc_interneuron_rate_hz": 0.63,
+        "motor_rate_hz": 0.11,
+        "total_spikes": 176,
+        "network_status": "healthy"
+      }
+    ],
+    "top_recruited_motor_neurons": [
+      {
+        "id": "720575941533190337",
+        "cell_type": "DLM1-4",
+        "body_part_effector": "wing",
+        "neuromere": "T1",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 26.0,
+        "delta_rate_hz": 26.0
+      },
+      {
+        "id": "720575941583644382",
+        "cell_type": "DLM1-4",
+        "body_part_effector": "wing",
+        "neuromere": "T1",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 24.0,
+        "delta_rate_hz": 24.0
+      },
+      {
+        "id": "720575941432491145",
+        "cell_type": "DLM1-4",
+        "body_part_effector": "wing",
+        "neuromere": "T1",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 20.0,
+        "delta_rate_hz": 20.0
+      },
+      {
+        "id": "720575941692400603",
+        "cell_type": "DLM5",
+        "body_part_effector": "wing",
+        "neuromere": "T2",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 16.0,
+        "delta_rate_hz": 16.0
+      },
+      {
+        "id": "720575941519783640",
+        "cell_type": "DLM1-4",
+        "body_part_effector": "wing",
+        "neuromere": "T1",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 14.0,
+        "delta_rate_hz": 14.0
+      },
+      {
+        "id": "720575941463144336",
+        "cell_type": "DLM1-4",
+        "body_part_effector": "wing",
+        "neuromere": "T1",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 12.0,
+        "delta_rate_hz": 12.0
+      },
+      {
+        "id": "720575941500579913",
+        "cell_type": "tergotrochanter_extensor_TT",
+        "body_part_effector": "middle_leg",
+        "neuromere": "T2",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 12.0,
+        "delta_rate_hz": 12.0
+      },
+      {
+        "id": "720575941640465439",
+        "cell_type": "DLM1-4",
+        "body_part_effector": "wing",
+        "neuromere": "T1",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 12.0,
+        "delta_rate_hz": 12.0
+      },
+      {
+        "id": "720575941544439325",
+        "cell_type": "PS1",
+        "body_part_effector": "wing",
+        "neuromere": "T2",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 4.0,
+        "delta_rate_hz": 4.0
+      },
+      {
+        "id": "720575941596050112",
+        "cell_type": "DLM5",
+        "body_part_effector": "wing",
+        "neuromere": "T1",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 2.0,
+        "delta_rate_hz": 2.0
+      },
+      {
+        "id": "720575941353301552",
+        "cell_type": "sternal_posterior_rotator_miller_32",
+        "body_part_effector": "front_leg",
+        "neuromere": "T1",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941399414563",
+        "cell_type": "trochanter_flexor_ProAN",
+        "body_part_effector": "front_leg",
+        "neuromere": "T1",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941402088304",
+        "cell_type": "sternal_posterior_rotator",
+        "body_part_effector": "front_leg",
+        "neuromere": "T1",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941415020572",
+        "cell_type": "long_tendon_muscle_ltm_B",
+        "body_part_effector": "hind_leg",
+        "neuromere": "T3",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941428327160",
+        "cell_type": "long_tendon_muscle_B",
+        "body_part_effector": "hind_leg",
+        "neuromere": "T3",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941431160824",
+        "cell_type": "tibia_flexor",
+        "body_part_effector": "hind_leg",
+        "neuromere": "T3",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941432965902",
+        "cell_type": "tibia_extensor_FETi",
+        "body_part_effector": "middle_leg",
+        "neuromere": "T2",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941434753568",
+        "cell_type": "tibia_flexor",
+        "body_part_effector": "middle_leg",
+        "neuromere": "T2",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941435830546",
+        "cell_type": "long_tendon_muscle_B",
+        "body_part_effector": "front_leg",
+        "neuromere": "T1",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941436910303",
+        "cell_type": "ENXXX226",
+        "body_part_effector": "spiracle",
+        "neuromere": "A6",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941436960735",
+        "cell_type": "accessory_tibia_flexor_B",
+        "body_part_effector": "middle_leg",
+        "neuromere": "T2",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941439667986",
+        "cell_type": "long_tendon_muscle_B_femur",
+        "body_part_effector": "front_leg",
+        "neuromere": "T1",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941447103669",
+        "cell_type": "long_tendon_muscle_B_femur",
+        "body_part_effector": "hind_leg",
+        "neuromere": "T3",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941449780405",
+        "cell_type": "MN1",
+        "body_part_effector": "proboscis",
+        "neuromere": "nan",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941450561358",
+        "cell_type": "trochanter_flexor_ProAN",
+        "body_part_effector": "front_leg",
+        "neuromere": "T1",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941451840425",
+        "cell_type": "trochanter_flexor_ventrolateral_ribbon",
+        "body_part_effector": "hind_leg",
+        "neuromere": "T3",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941455787245",
+        "cell_type": "sternal_anterior_rotator",
+        "body_part_effector": "front_leg",
+        "neuromere": "T1",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941456201887",
+        "cell_type": "iv1",
+        "body_part_effector": "wing",
+        "neuromere": "T2",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941456279021",
+        "cell_type": "EFFabg29",
+        "body_part_effector": "abdomen",
+        "neuromere": "A1",
+        "side": "right",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      },
+      {
+        "id": "720575941459347411",
+        "cell_type": "iii4",
+        "body_part_effector": "wing",
+        "neuromere": "T2",
+        "side": "left",
+        "baseline_rate_hz": 0.0,
+        "stimulated_rate_hz": 0.0,
+        "delta_rate_hz": 0.0
+      }
+    ],
+    "total_motor_neurons_recruited": 10
+  },
+  "limitations_and_assumptions": [
+    "Physiological recruitment of motor neurons does NOT constitute overt physical movement (flight/walking requires biomechanical muscle, body and sensory feedback loops).",
+    "Neurotransmitter predictions (Eckstein et al.) indicate putative transmitter presence, but postsynaptic receptor subtypes (e.g. nicotinic vs muscarinic, GluCl vs AMPA-like) are assumed based on standard insect CNS physiology (Shiu et al. 2024).",
+    "Synaptic weights are scaled linearly with anatomical synapse counts (0.35 mV / synapse), reflecting physical contact density rather than measured quantal content.",
+    "Truncated network boundary omits upstream sensory inputs and reciprocal feedback from non-modeled regions."
+  ]
+}

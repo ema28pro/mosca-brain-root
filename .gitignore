@@ -23,6 +23,10 @@ scratch/
 .vscode/
 .idea/
 
+# Data downloads
+*.feather
+data/banc/*.feather
+
 # OS
 .DS_Store
 Thumbs.db

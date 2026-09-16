@@ -12,12 +12,11 @@ Provides REST endpoints for:
 import json
 from pathlib import Path
 from typing import Dict, Any, Optional, List
-import numpy as np
 
-from fastapi import FastAPI, APIRouter, HTTPException, Query
+from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from moscabrain.connectome.banc_circuit import BANCCircuitManager

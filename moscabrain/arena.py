@@ -4,7 +4,7 @@ Contiene fuentes de luz, gotas de sacarosa (alimento), sombras/depredadores y pl
 para poner a prueba el comportamiento corporizado del conectoma.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Dict, Optional
 import numpy as np
 from .agent import FlyAgent

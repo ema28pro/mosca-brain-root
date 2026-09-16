@@ -35,7 +35,6 @@ class CompoundEye:
         # Buffers temporales para cálculo de flujo óptico y sombras
         self.left_intensities = np.zeros(self.n_left, dtype=np.float32)
         self.right_intensities = np.zeros(self.n_right, dtype=np.float32)
-        self.prev_total_intensity = 0.0
         self.looming_signal = 0.0
 
     def configure(

@@ -4,7 +4,7 @@ Calcula potenciales de membrana (LIF), generación de espigas (spikes) y corrien
 sinápticas sobre los 15.091.983 conexiones sinápticas reales de las 138.639 neuronas.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 import numpy as np
 from scipy import sparse
 from .circuits import FlyWireConnectomeTopology

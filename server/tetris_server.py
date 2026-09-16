@@ -9,14 +9,14 @@ import time
 from typing import Dict, List, Optional
 import numpy as np
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
 import uvicorn
 
 import os
-from moscabrain import FlyAgent, FlyWireAgent, BANCAgent
+from moscabrain import FlyAgent
 
 app = FastAPI(title="MoscaBrain Tetris Engine", version="1.0.0")
 

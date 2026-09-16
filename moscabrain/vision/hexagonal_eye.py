@@ -6,7 +6,7 @@ de Drosophila muestrea una imagen 2D o ventana de juego.
 """
 
 from dataclasses import dataclass
-from typing import Tuple, List, Optional, Dict
+from typing import Tuple
 import numpy as np
 
 

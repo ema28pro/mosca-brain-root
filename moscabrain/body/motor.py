@@ -6,7 +6,6 @@ giro (yaw), extensión de probóscide para comer y reflejo balístico de escape.
 
 from dataclasses import dataclass
 from enum import Enum
-import numpy as np
 
 
 class ActionState(str, Enum):

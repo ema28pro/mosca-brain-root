@@ -5,10 +5,9 @@ configurar la división visual de los ojos (split o duplicado) y traducir el dis
 del conectoma en pulsaciones de teclas o comandos de juego (UP, DOWN, LEFT, RIGHT, SPACE).
 """
 
-from typing import Dict, List, Optional, Callable, Any
+from typing import Dict, List, Optional, Callable
 import numpy as np
 from ..agent import FlyAgent
-from ..body.motor import ActionOutput, ActionState
 
 
 class GameBridge:

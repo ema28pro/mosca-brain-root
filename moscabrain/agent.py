@@ -4,7 +4,7 @@ Elimina cualquier circuito sintético y conecta la visión hexagonal, el olfato
 y la dopamina directamente a las 15.091.983 sinapsis de FlyWire.
 """
 
-from typing import List, Dict, Optional, Tuple, Union
+from typing import List, Dict, Optional, Tuple
 import numpy as np
 
 from .connectome.circuits import FlyWireConnectomeTopology
@@ -61,7 +61,6 @@ class FlyWireAgent:
     def start_feeding(self):
         """Inicia el programa motor de alimentación y extensión de probóscide."""
         self.is_feeding = True
-        self._motor_settle_steps = 0
         self.speed = 0.0
 
     def stop_feeding(self):

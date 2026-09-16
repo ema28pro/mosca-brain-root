@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="moscabrain",
-    version="1.0.0",
+    version="1.2.0",
     description="Framework biofísico y simulador del conectoma del cerebro de la mosca (FlyWire Drosophila)",
     author="MoscaBrain Team",
     packages=find_packages(),

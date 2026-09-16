@@ -7,7 +7,7 @@ No carga en memoria el motor cerebral aislado de FlyWire de 15M de sinapsis,
 optimizando el consumo de memoria RAM y latencia.
 """
 
-from typing import List, Dict, Optional, Any, Union
+from typing import List, Dict, Optional, Any
 import numpy as np
 
 from .connectome.banc_circuit import BANCCircuitManager

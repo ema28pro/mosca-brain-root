@@ -4,7 +4,7 @@ Permite exponer a la mosca a olores naturales (quimiorrecepción) o codificar s�
 abstractos (como cartas para 21/Blackjack o estados de juego) a través de los glomérulos.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 import numpy as np
 
 

@@ -16,10 +16,11 @@ from .dopamine.system import DopamineSystem
 from .body.motor import ActionOutput, ActionState
 
 
-class FlyAgent:
+class FlyWireAgent:
     """
-    Agente mosca corporizado con cerebro simulado a partir del conectoma real de FlyWire.
-    Contiene 138.639 neuronas reales y 15.091.983 sinapsis biológicas reales.
+    Agente mosca corporizado con cerebro simulado a partir del conectoma real de FlyWire (FAFB v783).
+    Contiene 138.639 neuronas reales y 15.091.983 sinapsis biológicas cerebrales.
+    Especializado en sensoriomotor cefálico (visión retinotópica, olfato y dopamina PAM/PPL1).
     """
 
     def __init__(
@@ -28,26 +29,12 @@ class FlyAgent:
         num_ommatidia: int = 32,
         num_glomeruli: int = 16,
         fov_horizontal: float = 270.0,
-        connectome_mode: str = "banc",
     ):
-        # Modo de conectoma: "banc" (Whole-CNS: Cerebro + VNC) o "flywire_brain" (Solo cerebro)
-        self.connectome_mode = connectome_mode
+        self.connectome_mode = "flywire_brain"
 
         # 1. Conectoma Real de FlyWire (15.091.983 sinapsis cerebrales)
         self.topology = FlyWireConnectomeTopology()
         self.engine = ConnectomeEngine(topology=self.topology, dt=dt)
-
-        # 1.1 Módulos BANC (Whole-CNS: Brain + Nerve Cord)
-        self._banc_circuit_mgr = None
-        self._banc_gf_sim = None
-        self._banc_p9_sim = None
-        self.banc_telemetry: Dict[str, Any] = {
-            "active_mode": self.connectome_mode,
-            "motor_rate_hz": 0.0,
-            "jump_motor_active": False,
-            "leg_motor_rate_hz": 0.0,
-            "top_active_motor_neuron": None
-        }
 
         # 2. Órganos Sensoriales
         # A) Ojo compuesto tradicional
@@ -70,22 +57,6 @@ class FlyAgent:
         # Estado motor de alimentación (probóscide)
         self.is_feeding: bool = False
         self.feeding_counter: int = 0
-
-    def set_connectome_mode(self, mode: str):
-        """Alterna dinámicamente entre conectoma completo 'banc' y cerebral 'flywire_brain'."""
-        if mode not in ("banc", "flywire_brain"):
-            raise ValueError(f"Modo desconocido: '{mode}'. Opciones válidas: 'banc', 'flywire_brain'")
-        self.connectome_mode = mode
-        self.banc_telemetry["active_mode"] = mode
-
-    def _get_banc_gf_simulator(self):
-        if self._banc_gf_sim is None:
-            from .connectome.banc_circuit import BANCCircuitManager
-            from .connectome.banc_lif_simulator import BANCLIFSimulator
-            self._banc_circuit_mgr = BANCCircuitManager()
-            circuit = self._banc_circuit_mgr.extract_giant_fiber_circuit(synapse_threshold=3)
-            self._banc_gf_sim = BANCLIFSimulator(circuit)
-        return self._banc_gf_sim
 
     def start_feeding(self):
         """Inicia el programa motor de alimentación y extensión de probóscide."""
@@ -117,6 +88,10 @@ class FlyAgent:
     def stimulate_sugar(self, intensity: float = 1.5):
         """Estimula directamente las neuronas gustativas de azúcar (Sugar GRNs) reales."""
         self.engine.stimulate_sugar(intensity=intensity)
+
+    def set_connectome_mode(self, mode: str):
+        """Actualiza el modo del conectoma."""
+        self.connectome_mode = mode
 
     # -------------------------------------------------------------------------
     # Paso de Simulación Integrado (Entorno Tradicional)
@@ -326,3 +301,23 @@ class FlyAgent:
             },
             "brain": brain_telemetry,
         }
+
+
+# Alias de conveniencia
+FlyWireBrainAgent = FlyWireAgent
+
+
+class FlyAgent:
+    """
+    Fábrica unificada de agentes corporizados para Drosophila melanogaster.
+
+    Permite instanciar de forma aislada y eficiente en memoria:
+    - BANCAgent (modo 'banc'): Sistema nervioso completo (Cerebro + VNC continuo).
+    - FlyWireAgent (modo 'flywire_brain'): Cerebro aislado de FlyWire (138k neuronas).
+    """
+
+    def __new__(cls, *args, connectome_mode: str = "flywire_brain", **kwargs):
+        if connectome_mode == "banc":
+            from .agent_banc import BANCAgent
+            return BANCAgent(*args, **kwargs)
+        return FlyWireAgent(*args, **kwargs)

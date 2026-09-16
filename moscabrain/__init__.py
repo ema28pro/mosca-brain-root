@@ -3,7 +3,8 @@ MoscaBrain: Framework intuitivo y biofísico para interactuar con el conectoma
 digitalizado del cerebro de la mosca (Drosophila melanogaster - FlyWire).
 """
 
-from .agent import FlyAgent
+from .agent import FlyAgent, FlyWireAgent, FlyWireBrainAgent
+from .agent_banc import BANCAgent
 from .arena import SimulationArena, FoodItem
 from .vision.compound_eye import CompoundEye, VisionConfig
 from .vision.hexagonal_eye import HexagonalCompoundEye
@@ -17,9 +18,12 @@ from .connectome.banc_lif_simulator import BANCLIFSimulator, DEFAULT_PHYSIOLOGY_
 from .connectome.banc_experiment import run_full_banc_evaluation
 from .bridge.controller import GameBridge
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __all__ = [
     "FlyAgent",
+    "FlyWireAgent",
+    "FlyWireBrainAgent",
+    "BANCAgent",
     "SimulationArena",
     "FoodItem",
     "CompoundEye",
@@ -37,3 +41,4 @@ __all__ = [
     "run_full_banc_evaluation",
     "GameBridge",
 ]
+

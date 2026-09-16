@@ -21,15 +21,22 @@ El servidor general integra todo el ecosistema en un solo proceso FastAPI en el 
 ### A. Comando para Iniciar
 Ejecuta en la terminal de la raíz del proyecto (`c:\Users\Fixer\Desktop\Mosca`):
 
-**Comando Recomendado (Estable y sin sobrecarga de archivos):**
+**Opción 1: El comando más simple (Arranca con recarga automática segura):**
+```powershell
+python run.py
+```
+*(O también: `python -m server.app`)*
+
+**Opción 2: Usando Uvicorn directamente con carpetas acotadas:**
+```powershell
+python -m uvicorn server.app:app --reload --reload-dir server --reload-dir moscabrain --port 8000
+```
+
+**Opción 3: Modo producción / estático sin recarga:**
 ```powershell
 python -m uvicorn server.app:app --port 8000
 ```
 
-**Si deseas modo Auto-Reload (sin agotar recursos de Windows):**
-```powershell
-python -m uvicorn server.app:app --reload --reload-dir server --reload-dir moscabrain --port 8000
-```
 
 > [!WARNING]
 > **Solución a `OSError: [WinError 1450] Recursos insuficientes en el sistema`**:  

@@ -556,3 +556,16 @@ except Exception as e:
     print(f"BANC mount notice: {e}")
 
 
+if __name__ == "__main__":
+    import uvicorn
+    # Vigilar únicamente server/ y moscabrain/ para evitar el WinError 1450 por los miles de archivos de eons_fly_brain
+    uvicorn.run(
+        "server.app:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+        reload_dirs=["server", "moscabrain"],
+    )
+
+
+

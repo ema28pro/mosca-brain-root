@@ -42,7 +42,27 @@ Unlike brain-only connectomes (such as FAFB / FlyWire v783), where descending ax
 
 ---
 
+### C. Conectoma del Macho de Google y Janelia (MANC & Male CNS)
+- 🏢 **División de Conectómica de Google Research:**  
+  [Google Research: Applied Sciences - Connectomics](https://research.google/teams/applied-science/connectomics/)
+- 📰 **Blog Oficial del Proyecto por Google:**  
+  [Google Research Blog: Releasing the Male Adult Nerve Cord (MANC) Connectome](https://research.google/blog/releasing-the-male-adult-nerve-cord-connectome/)
+- 🔬 **Explorador Interactivo neuPrint (Google / Janelia):**  
+  [Janelia neuPrint Explorer (dataset `manc:v1.0`)](https://neuprint.janelia.org/?dataset=manc:v1.0)
+- 🖥️ **Herramienta Neuroglancer (Google):**  
+  [https://github.com/google/neuroglancer](https://github.com/google/neuroglancer)
+- 📄 **Artículos Científicos (Papers):**  
+  - **Takemura, S. et al. (2023)**. *A connectome of the male Drosophila ventral nerve cord*. [bioRxiv: 10.1101/2023.06.05.543757](https://doi.org/10.1101/2023.06.05.543757)
+  - **Berg, S., Marin, E., Schlegel, P. et al. (2025/2026)**. *Whole-animal connectome of a male fruit fly (Drosophila melanogaster)*. [Cell / bioRxiv](https://doi.org/10.1101/2023.12.06.570454)
+- 💡 **Diferencia Anatómica Macho (~166.7k) vs Hembra BANC (~188.2k):**  
+  El conectoma del macho (*Google/Janelia MANC + Male CNS*) abarca ~166.700 neuronas totales. BANC corresponde a una hembra completa con ~188.200 neuronas. La diferencia biológica de ~21.500 neuronas se concentra en:
+  1. *Ojos compuestos:* Las hembras adultas tienen un conteo mayor de omatidios en la retina y lámina óptica.
+  2. *Segmentos abdominales:* La hembra posee ganglios neuroméricos terminales complejos (A1–A8) dedicados al control neuromuscular del ovipositor y puesta de huevos.
+
+---
+
 ## 2. Data Provenance and Materialization (BANC v888)
+
 
 - **Materialization Snapshot:** CAVE materialization **888** (snapshot 2026-04-16)
 - **Scale:** 188,508 neurons | 13.62 million synaptic connections (v3 edgelist)

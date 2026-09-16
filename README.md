@@ -150,7 +150,37 @@ if player_crashed:
 
 ---
 
+## 🌐 Datasets Biológicos y Enlaces Oficiales
+
+MoscaBrain integra y contrasta los principales atlas conectómicos del consorcio internacional:
+
+| Dataset | Sujeto | Alcance Anatómico | Neuronas | Referencia / Enlace |
+| :--- | :--- | :--- | :--- | :--- |
+| **FlyWire (FAFB v783)** | Hembra adulta | Solo Cerebro | 138.639 | [FlyWire Codex](https://codex.flywire.ai/) · [Nature 2024](https://doi.org/10.1038/s41586-024-07558-y) |
+| **BANC (v888)** | Hembra adulta | Cerebro + VNC continuo | 188.208 | [Tutorial BANC](https://github.com/sjcabs/fly_connectome_data_tutorial) · [Nature 2026](https://doi.org/10.1038/s41586-026-10735-w) |
+| **Google / Janelia MANC & Male CNS** | Macho adulto | VNC + Cerebro Macho | ~166.700 | [Google Connectomics](https://research.google/teams/applied-science/connectomics/) · [neuPrint MANC](https://neuprint.janelia.org/?dataset=manc:v1.0) |
+
+### 🔗 Enlaces al Conectoma del Macho de Google:
+- 🏢 **Google Research Applied Sciences (Connectomics):**  
+  [https://research.google/teams/applied-science/connectomics/](https://research.google/teams/applied-science/connectomics/)
+- 📰 **Anuncio y Publicación Oficial de Google Research:**  
+  [Google Research Blog: Releasing the Male Adult Nerve Cord (MANC) Connectome](https://research.google/blog/releasing-the-male-adult-nerve-cord-connectome/)
+- 🔬 **Explorador Interactivo neuPrint (Janelia / Google):**  
+  [Janelia neuPrint Explorer (manc:v1.0)](https://neuprint.janelia.org/?dataset=manc:v1.0)
+- 🖥️ **Visor 3D Neuroglancer de Google:**  
+  [https://github.com/google/neuroglancer](https://github.com/google/neuroglancer)
+- 📄 **Artículos Científicos de Referencia:**  
+  - *Takemura, S. et al. (2023). A connectome of the male Drosophila ventral nerve cord.* [bioRxiv: 10.1101/2023.06.05.543757](https://doi.org/10.1101/2023.06.05.543757)
+  - *Berg, S., Marin, E. et al. (2025/2026). Whole-animal connectome of a male fruit fly (Drosophila melanogaster).* [Cell / bioRxiv](https://doi.org/10.1101/2023.12.06.570454)
+
+> [!NOTE]
+> **¿Por qué el macho tiene ~166.7k neuronas y la hembra BANC ~188.2k?**  
+> El macho adulto tiene ojos ligeramente menores en cantidad de omatidios y carece de los ganglios neuroméricos abdominales que inervan el ovipositor en los segmentos A1–A8 de la hembra, lo que explica la diferencia dimórfica de ~21.500 neuronas entre ambos conectomas.
+
+---
+
 ## 📂 Estructura del Proyecto
+
 
 ```
 mosca-brain-root/

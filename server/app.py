@@ -12,6 +12,7 @@ import random
 import numpy as np
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -19,6 +20,14 @@ from pydantic import BaseModel
 from moscabrain import FlyAgent, SimulationArena
 
 app = FastAPI(title="MoscaBrain Cockpit", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Instancia global de la arena y agente
 arena = SimulationArena(width=800, height=520)
@@ -520,13 +529,30 @@ if web_dir.exists():
 
 # Montar simulador conectómico BANC
 try:
-    from server.banc_api import app as banc_subapp
-    app.mount("/banc", banc_subapp)
-    # También redirigir /api/banc al subapp para compatibilidad
-    @app.get("/banc-preview")
-    async def serve_banc_preview():
-        banc_index = web_dir / "banc" / "index.html"
-        return FileResponse(str(banc_index))
+    from server.banc_api import router as banc_router
+    app.include_router(banc_router)
+
+    banc_web_dir = web_dir / "banc"
+    if banc_web_dir.exists():
+        app.mount("/banc/static", StaticFiles(directory=str(banc_web_dir)), name="banc_static")
+
+        @app.get("/banc")
+        @app.get("/banc/")
+        async def serve_banc_home():
+            return FileResponse(str(banc_web_dir / "index.html"))
+
+        @app.get("/banc/banc_style.css")
+        async def serve_banc_css():
+            return FileResponse(str(banc_web_dir / "banc_style.css"), media_type="text/css")
+
+        @app.get("/banc/banc_app.js")
+        async def serve_banc_js():
+            return FileResponse(str(banc_web_dir / "banc_app.js"), media_type="application/javascript")
+
+        @app.get("/banc-preview")
+        async def serve_banc_preview():
+            return FileResponse(str(banc_web_dir / "index.html"))
 except Exception as e:
     print(f"BANC mount notice: {e}")
+
 

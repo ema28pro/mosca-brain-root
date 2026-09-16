@@ -9,10 +9,35 @@ let currentCircuitData = null;
 let currentSimResults = null;
 let graphMode = 'schematic'; // 'schematic' or 'anatomical'
 
-// Dynamic API Base URL
-const apiBase = window.location.pathname.includes('/banc') && !window.location.pathname.startsWith('/api')
-  ? (window.location.pathname.replace(/\/$/, '') + '/api/banc')
+// Dynamic API Base URL supporting file://, /banc/, and root deployments
+let apiBase = window.location.protocol === 'file:'
+  ? 'http://127.0.0.1:8000/api/banc'
   : '/api/banc';
+
+function showConnectionWarning() {
+  const el = document.getElementById('connection-warning');
+  if (el) el.style.display = 'flex';
+  const badge = document.getElementById('backend-status-badge');
+  if (badge) {
+    badge.className = 'badge badge-dark';
+    badge.textContent = 'Servidor local no detectado';
+    badge.style.color = '#ff9980';
+    badge.style.borderColor = '#dc5032';
+  }
+}
+
+function hideConnectionWarning() {
+  const el = document.getElementById('connection-warning');
+  if (el) el.style.display = 'none';
+  const badge = document.getElementById('backend-status-badge');
+  if (badge) {
+    badge.className = 'badge badge-success';
+    badge.textContent = 'Simulator: Conectado a FastAPI';
+    badge.style.color = '';
+    badge.style.borderColor = '';
+  }
+}
+
 
 // Elements
 const circuitSelect = document.getElementById('circuit-select');
@@ -120,6 +145,7 @@ async function loadCircuit(circuitId) {
     const res = await fetch(`${apiBase}/circuit/${circuitId}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     currentCircuitData = await res.json();
+    hideConnectionWarning();
 
     // Update Stats Box
     statNeurons.textContent = currentCircuitData.stats.total_neurons;
@@ -131,8 +157,10 @@ async function loadCircuit(circuitId) {
     drawCircuitGraph();
   } catch (err) {
     console.error('Failed to load circuit:', err);
+    showConnectionWarning();
   }
 }
+
 
 // Compute Graph Node Coordinates
 let nodePositions = new Map(); // id -> {x, y, node}
@@ -214,10 +242,19 @@ function computeLayoutCoordinates() {
 
 // Draw Circuit Canvas
 function drawCircuitGraph() {
-  computeLayoutCoordinates();
   const W = circuitCanvas.width;
   const H = circuitCanvas.height;
   circuitCtx.clearRect(0, 0, W, H);
+
+  if (!currentCircuitData || !currentCircuitData.edges) {
+    circuitCtx.fillStyle = '#827e77';
+    circuitCtx.font = '13px Inter, sans-serif';
+    circuitCtx.textAlign = 'center';
+    circuitCtx.fillText('Cargando topología del circuito BANC...', W / 2, H / 2);
+    return;
+  }
+
+  computeLayoutCoordinates();
 
   // Background subtle grid
   circuitCtx.strokeStyle = 'rgba(45, 44, 41, 0.4)';
@@ -336,12 +373,14 @@ async function runSimulation() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     currentSimResults = await res.json();
+    hideConnectionWarning();
 
     renderSimulationResults(currentSimResults);
   } catch (err) {
     console.error('Simulation error:', err);
-    alert(`Simulation failed: ${err.message}`);
+    showConnectionWarning();
   } finally {
+
     btnRun.disabled = false;
     document.querySelector('.btn-spinner').style.display = 'none';
     document.querySelector('.btn-text').textContent = 'Run Simulation';

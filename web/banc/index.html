@@ -21,14 +21,23 @@
         </p>
       </div>
       <div class="masthead-badges">
+        <a href="/" class="badge badge-dark" style="text-decoration: none; border-color: var(--accent-amber); color: var(--accent-amber);">🧠 Cockpit Arena FlyWire &rarr;</a>
         <span class="badge badge-accent">Shiu et al. (Nature 2024) Dynamics</span>
         <span class="badge badge-dark">188k Whole-CNS Graph</span>
-        <span class="badge badge-success" id="backend-status-badge">Simulator: Vectorized CPU Ready</span>
       </div>
     </header>
 
+    <!-- Connection / Server Alert Banner (hidden by default) -->
+    <div id="connection-warning" class="scientific-banner" style="display: none; background: rgba(220, 80, 50, 0.15); border-color: #dc5032; margin-bottom: 1rem;">
+      <div class="banner-icon">⚠️</div>
+      <div class="banner-content">
+        <strong style="color: #ff9980;">Servidor local no detectado o restricción CORS:</strong> Si abriste este archivo directamente con <code>file://</code>, el navegador bloquea las peticiones de red locales. Para interactuar con el simulador BANC, asegúrate de tener el servidor corriendo con <code>python -m uvicorn server.app:app --reload --port 8000</code> y accede a través de: <a href="http://localhost:8000/banc/" style="color: #ffaa88; text-decoration: underline; font-weight: 600;">http://localhost:8000/banc/</a>.
+      </div>
+    </div>
+
     <!-- Scientific Context Alert Banner -->
     <div class="scientific-banner">
+
       <div class="banner-icon">🔬</div>
       <div class="banner-content">
         <strong>Experiment Hypothesis:</strong> Can descending command stimulation (e.g. Giant Fiber escape or P9 walking) recruit identified thoracic motor neurons via documented anatomical synapses?

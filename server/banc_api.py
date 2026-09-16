@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 import numpy as np
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -23,6 +23,8 @@ from pydantic import BaseModel, Field
 from moscabrain.connectome.banc_circuit import BANCCircuitManager
 from moscabrain.connectome.banc_lif_simulator import BANCLIFSimulator, run_comparison_experiment, DEFAULT_PHYSIOLOGY_PARAMS
 from moscabrain.connectome.banc_experiment import run_full_banc_evaluation
+
+router = APIRouter(prefix="/api/banc", tags=["banc"])
 
 app = FastAPI(
     title="BANC Drosophila Connectome Simulation API",
@@ -33,10 +35,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 circuit_mgr = BANCCircuitManager()
 cached_circuits: Dict[str, Dict[str, Any]] = {}
@@ -75,7 +78,7 @@ class SimulationRequest(BaseModel):
     seed: int = Field(42, description="Random seed for reproducibility")
 
 
-@app.get("/api/banc/circuits")
+@router.get("/circuits")
 async def list_circuits():
     """List available BANC biological circuits."""
     return [
@@ -98,14 +101,14 @@ async def list_circuits():
     ]
 
 
-@app.get("/api/banc/circuit/{circuit_id}")
+@router.get("/circuit/{circuit_id}")
 async def get_circuit_details(circuit_id: str):
     """Retrieve graph topology, biological metadata, and 3D anatomical coordinates for a circuit."""
     c = get_or_load_circuit(circuit_id)
     return c
 
 
-@app.post("/api/banc/simulate")
+@router.post("/simulate")
 async def simulate(req: SimulationRequest):
     """Execute a Leaky Integrate-and-Fire simulation run."""
     c = get_or_load_circuit(req.circuit_id)
@@ -145,7 +148,7 @@ async def simulate(req: SimulationRequest):
     return results
 
 
-@app.get("/api/banc/sweep")
+@router.get("/sweep")
 async def sweep(
     circuit_id: str = "giant_fiber",
     weight_scale: float = 1.5,
@@ -185,7 +188,7 @@ async def sweep(
     }
 
 
-@app.get("/api/banc/export")
+@router.get("/export")
 async def export_results(circuit_id: str = "giant_fiber"):
     """Export precomputed comprehensive evaluation report as a downloadable JSON."""
     report_file = Path(__file__).resolve().parent.parent / "data" / "banc" / "results" / f"{circuit_id}_experiment_report.json"
@@ -199,6 +202,10 @@ async def export_results(circuit_id: str = "giant_fiber"):
         content=payload,
         headers={"Content-Disposition": f"attachment; filename=banc_{circuit_id}_experiment.json"}
     )
+
+
+# Attach router to standalone FastAPI instance
+app.include_router(router)
 
 
 # Serve Static UI files

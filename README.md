@@ -53,6 +53,28 @@ Permite conectar órganos sensoriales reales (visión retinotópica por omatidio
    - Inyección de dopamina en clústeres dopaminérgicos apetitivos (PAM) y aversivos (PPL1), facilitando aprendizaje reforzado bio-inspirado y modulación sináptica (STDP).
 5. **Controlador para Videojuegos y Entornos (GameBridge)**:
    - Interfaz genérica para conectar la mosca a cualquier entorno o videojuego (Tetris, Doom, Mario, entornos Gymnasium/Gym), mapeando las espigas de las neuronas descendentes P9 a teclas o comandos de acción.
+6. **Simulación Sensorimotora BANC (Nature 2026)**:
+   - Conectoma continuo Cerebro + Cordón Nervioso Ventral (VNC) con 188k neuronas.
+   - Permite estimular neuronas descendentes identificadas (Fibra Gigante DNp01, Marcha P9/DNp09) y medir espigas en motoneuronas identificadas de patas y alas en tiempo real.
+   - Interfaz interactiva local con raster plot, curvas de reclutamiento y trazado 3D de coordenadas reales: `http://localhost:8000/banc/`.
+   - Consulta la [Guía Completa de Simulación BANC](docs/BANC_SIMULATION_GUIDE.md).
+
+---
+
+## 📚 Referencias Científicas y Repositorios
+
+### Conectoma BANC (Brain and Nerve Cord):
+- **Paper:** Bates, Phelps, Kim, Yang et al. (2026). *The connectome of an adult Drosophila brain and nerve cord*. **Nature**. [DOI: 10.1038/s41586-026-10735-w](https://doi.org/10.1038/s41586-026-10735-w) | [Nature Article](https://www.nature.com/articles/s41586-026-10735-w)
+- **Repositorio de Datos y Tutorial:** [sjcabs/fly_connectome_data_tutorial](https://github.com/sjcabs/fly_connectome_data_tutorial)
+- **Documentación del dataset:** [banc_data.md](https://github.com/sjcabs/fly_connectome_data_tutorial/blob/main/data/dataset_documentation/banc_data.md)
+- **Herramientas Python BANC:** [the-BANC-fly-connectome](https://github.com/jasper-tms/the-BANC-fly-connectome)
+- **Herramientas R (bancr):** [natverse.org/bancr](https://natverse.org/bancr/)
+- **Bucket de Datos (Google Cloud):** `gs://lee-lab_brain-and-nerve-cord-fly-connectome/compiled_data/banc_888/`
+
+### Modelo de Dinámicas LIF (Shiu et al.):
+- **Paper:** Shiu, Stern, Hermundstad et al. (2024). *A leaky integrate-and-fire computational model based on the connectome of the entire adult Drosophila brain reveals insights into sensorimotor processing*. **Nature**, 634, 153–161. [DOI: 10.1038/s41586-024-07763-9](https://doi.org/10.1038/s41586-024-07763-9) | [Nature Article](https://www.nature.com/articles/s41586-024-07763-9)
+- **Repositorio Original Shiu:** [philshiu/Drosophila_brain_model](https://github.com/philshiu/Drosophila_brain_model)
+- **Emulación Multi-backend Eon Systems:** [eonsystemspbc/fly-brain](https://github.com/eonsystemspbc/fly-brain) *(incluido en `eons_fly_brain/`)*
 
 ---
 

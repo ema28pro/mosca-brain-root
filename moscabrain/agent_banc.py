@@ -10,12 +10,13 @@ optimizando el consumo de memoria RAM y latencia.
 from typing import List, Dict, Optional, Any
 import numpy as np
 
+from .agent_base import BaseFlyAgent
 from .connectome.banc_circuit import BANCCircuitManager
 from .connectome.banc_lif_simulator import BANCLIFSimulator, DEFAULT_PHYSIOLOGY_PARAMS
 from .body.motor import ActionOutput, ActionState
 
 
-class BANCAgent:
+class BANCAgent(BaseFlyAgent):
     """
     Agente mosca corporizado con sistema nervioso central completo (Cerebro + VNC).
     Conecta neuronas descendentes con motoneuronas de las patas y alas.
@@ -28,7 +29,7 @@ class BANCAgent:
         physiology_params: Optional[Dict[str, Any]] = None,
         dt: float = 0.0002,  # 0.2 ms
     ):
-        self.connectome_mode = "banc"
+        super().__init__(connectome_mode="banc")
         self.circuit_id = circuit_id
         self.dt = dt
 
@@ -49,16 +50,10 @@ class BANCAgent:
 
         self.simulator = BANCLIFSimulator(self.circuit, params=params)
 
-        # 3. Estado cinemático corporal en el entorno
-        self.x: float = 300.0
-        self.y: float = 300.0
-        self.angle: float = 0.0
-        self.speed: float = 0.0
-
-        # Estado motor y de alimentación
-        self.is_feeding: bool = False
-        self.feeding_counter: int = 0
-        self.dopamine_level: float = 0.0
+        # Estado de neuromodulación por dopamina
+        self._dopamine_level: float = 0.0
+        self._total_rewards: float = 0.0
+        self._total_punishments: float = 0.0
 
         # Telemetría de motoneuronas BANC
         self.banc_telemetry: Dict[str, Any] = {
@@ -70,6 +65,38 @@ class BANCAgent:
             "total_spikes": 0,
             "recruited_motor_count": 0
         }
+
+    @property
+    def total_neurons(self) -> int:
+        return len(self.circuit.get("nodes", [])) if hasattr(self, "circuit") and self.circuit else 0
+
+    @property
+    def total_synapses(self) -> int:
+        return len(self.circuit.get("edges", [])) if hasattr(self, "circuit") and self.circuit else 0
+
+    @property
+    def dopamine_level(self) -> float:
+        return self._dopamine_level
+
+    @dopamine_level.setter
+    def dopamine_level(self, val: float):
+        self._dopamine_level = val
+
+    @property
+    def total_rewards(self) -> float:
+        return self._total_rewards
+
+    @total_rewards.setter
+    def total_rewards(self, val: float):
+        self._total_rewards = val
+
+    @property
+    def total_punishments(self) -> float:
+        return self._total_punishments
+
+    @total_punishments.setter
+    def total_punishments(self, val: float):
+        self._total_punishments = val
 
     def set_circuit(self, circuit_id: str, synapse_threshold: Optional[int] = None):
         """Cambia el circuito BANC activo entre 'giant_fiber' y 'p9'."""
@@ -89,16 +116,13 @@ class BANCAgent:
         self.connectome_mode = mode
         self.banc_telemetry["active_mode"] = mode
 
-    def stop_feeding(self):
-        """Restablece el estado de alimentación."""
-        self.is_feeding = False
-        self.feeding_counter = 0
-
     def reward(self, amount: float = 1.0, reason: str = "recompensa"):
-        self.dopamine_level = min(2.0, self.dopamine_level + amount * 0.2)
+        self._dopamine_level = min(2.0, self._dopamine_level + amount * 0.2)
+        self._total_rewards += amount
 
     def punish(self, amount: float = 1.0, reason: str = "castigo"):
-        self.dopamine_level = max(-2.0, self.dopamine_level - amount * 0.2)
+        self._dopamine_level = max(-2.0, self._dopamine_level - amount * 0.2)
+        self._total_punishments += amount
 
     def step(
         self,
@@ -196,3 +220,17 @@ class BANCAgent:
         self.y += float(np.sin(rad)) * self.speed * dt_s
 
         return action
+
+    def get_telemetry(self) -> Dict[str, Any]:
+        """Devuelve el estado cinemático, dopaminérgico y electrofisiológico de motoneuronas BANC."""
+        return {
+            "position": {"x": round(self.x, 1), "y": round(self.y, 1), "angle": round(self.angle, 3)},
+            "speed": round(self.speed, 2),
+            "dopamine": {
+                "current_level": round(float(self.dopamine_level), 3),
+                "total_rewards": round(float(self.total_rewards), 2),
+                "total_punishments": round(float(self.total_punishments), 2),
+            },
+            "banc": dict(self.banc_telemetry),
+        }
+

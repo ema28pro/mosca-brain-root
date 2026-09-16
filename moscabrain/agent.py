@@ -7,6 +7,7 @@ y la dopamina directamente a las 15.091.983 sinapsis de FlyWire.
 from typing import List, Dict, Optional, Tuple
 import numpy as np
 
+from .agent_base import BaseFlyAgent
 from .connectome.circuits import FlyWireConnectomeTopology
 from .connectome.dynamics import ConnectomeEngine
 from .vision.compound_eye import CompoundEye, VisionConfig
@@ -16,7 +17,7 @@ from .dopamine.system import DopamineSystem
 from .body.motor import ActionOutput, ActionState
 
 
-class FlyWireAgent:
+class FlyWireAgent(BaseFlyAgent):
     """
     Agente mosca corporizado con cerebro simulado a partir del conectoma real de FlyWire (FAFB v783).
     Contiene 138.639 neuronas reales y 15.091.983 sinapsis biológicas cerebrales.
@@ -30,7 +31,7 @@ class FlyWireAgent:
         num_glomeruli: int = 16,
         fov_horizontal: float = 270.0,
     ):
-        self.connectome_mode = "flywire_brain"
+        super().__init__(connectome_mode="flywire_brain")
 
         # 1. Conectoma Real de FlyWire (15.091.983 sinapsis cerebrales)
         self.topology = FlyWireConnectomeTopology()
@@ -48,15 +49,25 @@ class FlyWireAgent:
         # 3. Neuromodulación por Dopamina (conectada a neuronas PAM reales)
         self.dopamine = DopamineSystem(self.engine)
 
-        # Posición y estado cinemático corporal en el entorno
-        self.x: float = 300.0
-        self.y: float = 300.0
-        self.angle: float = 0.0
-        self.speed: float = 0.0
+    @property
+    def total_neurons(self) -> int:
+        return self.topology.total_neurons
 
-        # Estado motor de alimentación (probóscide)
-        self.is_feeding: bool = False
-        self.feeding_counter: int = 0
+    @property
+    def total_synapses(self) -> int:
+        return self.topology.total_synapses
+
+    @property
+    def dopamine_level(self) -> float:
+        return self.dopamine.current_level
+
+    @property
+    def total_rewards(self) -> float:
+        return self.dopamine.total_rewards
+
+    @property
+    def total_punishments(self) -> float:
+        return self.dopamine.total_punishments
 
     def start_feeding(self):
         """Inicia el programa motor de alimentación y extensión de probóscide."""

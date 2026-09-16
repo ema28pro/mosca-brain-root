@@ -9,14 +9,14 @@ import time
 from typing import Dict, List, Optional
 import numpy as np
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
 import uvicorn
 
 import os
-from moscabrain import FlyAgent
+from moscabrain import FlyAgent, FlyWireAgent, BANCAgent
 
 app = FastAPI(title="MoscaBrain Tetris Engine", version="1.0.0")
 
@@ -84,11 +84,11 @@ async def get_status():
         "service": "MoscaBrain Tetris Engine",
         "port": 8001,
         "mode": fly.connectome_mode,
-        "neurons_count": len(fly.circuit["nodes"]) if is_banc else fly.topology.total_neurons,
-        "synapses_count": len(fly.circuit["edges"]) if is_banc else fly.topology.total_synapses,
-        "dopamine_level": round(float(getattr(fly, "dopamine_level", getattr(getattr(fly, "dopamine", None), "current_level", 0.0))), 3),
-        "total_rewards": round(float(getattr(getattr(fly, "dopamine", None), "total_rewards", 0.0)), 2),
-        "total_punishments": round(float(getattr(getattr(fly, "dopamine", None), "total_punishments", 0.0)), 2),
+        "neurons_count": fly.total_neurons,
+        "synapses_count": fly.total_synapses,
+        "dopamine_level": round(float(fly.dopamine_level), 3),
+        "total_rewards": round(float(fly.total_rewards), 2),
+        "total_punishments": round(float(fly.total_punishments), 2),
         "last_spikes": int(fly.banc_telemetry.get("total_spikes", 0)) if is_banc else int(np.count_nonzero(fly.engine.spikes)),
     }
 
@@ -319,13 +319,17 @@ async def tetris_websocket_endpoint(websocket: WebSocket):
     """
     await websocket.accept()
     try:
+        neurons = fly.total_neurons
+        synapses = fly.total_synapses
+        dopamine = round(float(fly.dopamine_level), 3)
+
         # Enviar confirmación inicial de conexión
         await websocket.send_json({
             "type": "connected",
             "message": "MoscaBrain Tetris Connectome Ready",
-            "neurons": fly.topology.total_neurons,
-            "synapses": fly.topology.total_synapses,
-            "dopamine": round(float(fly.dopamine.current_level), 3),
+            "neurons": neurons,
+            "synapses": synapses,
+            "dopamine": dopamine,
         })
 
         while True:
@@ -372,12 +376,18 @@ async def tetris_websocket_endpoint(websocket: WebSocket):
                 })
 
             elif cmd == "reset":
-                fly.engine.V.fill(fly.engine.v_rest)
-                fly.engine.spikes.fill(False)
-                fly.engine.syn_currents.fill(0.0)
-                fly.engine.firing_rates.fill(0.0)
-                fly.dopamine.total_rewards = 0.0
-                fly.dopamine.total_punishments = 0.0
+                if hasattr(fly, "engine"):
+                    fly.engine.V.fill(fly.engine.v_rest)
+                    fly.engine.spikes.fill(False)
+                    fly.engine.syn_currents.fill(0.0)
+                    fly.engine.firing_rates.fill(0.0)
+                if hasattr(fly, "dopamine"):
+                    fly.dopamine.total_rewards = 0.0
+                    fly.dopamine.total_punishments = 0.0
+                fly.total_rewards = 0.0
+                fly.total_punishments = 0.0
+                if hasattr(fly, "dopamine_level"):
+                    fly.dopamine_level = 0.0
                 await websocket.send_json({
                     "type": "reset_ack",
                     "message": "Connectome dynamics reset to rest",
@@ -385,8 +395,9 @@ async def tetris_websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         pass
-    except Exception:
-        pass
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":

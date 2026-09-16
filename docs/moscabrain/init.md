@@ -10,6 +10,7 @@ Define la versión del paquete (`__version__ = "1.2.0"`) y la lista de exportaci
 ## 2. Importaciones y Justificación
 
 ```python
+from .agent_base import BaseFlyAgent
 from .agent import FlyAgent, FlyWireAgent, FlyWireBrainAgent
 from .agent_banc import BANCAgent
 from .arena import SimulationArena, FoodItem
@@ -27,7 +28,7 @@ from .bridge.controller import GameBridge
 ```
 
 ### Justificación de Importaciones:
-- **Agentes**: `FlyAgent` (Factoría polimórfica), `FlyWireAgent` / `FlyWireBrainAgent` (cerebro cefálico de 138k neuronas), `BANCAgent` (Sistema Whole-CNS cerebro + VNC).
+- **Agentes**: `BaseFlyAgent` (Clase base abstracta / interfaz unificada), `FlyAgent` (Factoría polimórfica), `FlyWireAgent` / `FlyWireBrainAgent` (cerebro cefálico de 138k neuronas), `BANCAgent` (Sistema Whole-CNS cerebro + VNC).
 - **Entorno**: `SimulationArena` (mundo 2D con luces, plumas de olor y depredadores) y `FoodItem` (gotas de sacarosa).
 - **Sensores**: `CompoundEye` y `VisionConfig` (retina angular panorámica), `HexagonalCompoundEye` (captura por celosía hexagonal directa de pantalla), `AntennalLobe` (quimiorrecepción y codificación simbólica por glomérulos).
 - **Neuromodulación y Motor**: `DopamineSystem` (ejes PAM y PPL1), `ActionOutput` y `ActionState` (comandos de locomoción).

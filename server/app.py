@@ -515,8 +515,11 @@ async def websocket_endpoint(websocket: WebSocket):
             connected_websockets.remove(websocket)
 
 
-# Servir la interfaz web estática
-web_dir = Path(__file__).resolve().parent.parent / "web"
+# Servir la interfaz web estática de React (busca primero 'dist' de Vite, o 'web')
+root_dir = Path(__file__).resolve().parent.parent
+dist_dir = root_dir / "dist"
+web_dir = dist_dir if dist_dir.exists() else (root_dir / "web")
+
 if web_dir.exists():
     app.mount("/static", StaticFiles(directory=str(web_dir)), name="static")
     assets_dir = web_dir / "assets"
@@ -527,12 +530,15 @@ if web_dir.exists():
     async def serve_index():
         return FileResponse(str(web_dir / "index.html"))
 
-# Montar simulador conectómico BANC
+# Montar simulador conectómico BANC desde carpeta dedicada 'web_banc'
 try:
     from server.banc_api import router as banc_router
     app.include_router(banc_router)
 
-    banc_web_dir = web_dir / "banc"
+    banc_web_dir = root_dir / "web_banc"
+    if not banc_web_dir.exists():
+        banc_web_dir = root_dir / "web" / "banc"
+
     if banc_web_dir.exists():
         app.mount("/banc/static", StaticFiles(directory=str(banc_web_dir)), name="banc_static")
 
@@ -554,6 +560,7 @@ try:
             return FileResponse(str(banc_web_dir / "index.html"))
 except Exception as e:
     print(f"BANC mount notice: {e}")
+
 
 
 if __name__ == "__main__":

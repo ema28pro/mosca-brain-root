@@ -209,8 +209,13 @@ app.include_router(router)
 
 
 # Serve Static UI files
-banc_ui_dir = Path(__file__).resolve().parent.parent / "web" / "banc"
+root_dir = Path(__file__).resolve().parent.parent
+banc_ui_dir = root_dir / "web_banc"
+if not banc_ui_dir.exists():
+    banc_ui_dir = root_dir / "web" / "banc"
+
 if banc_ui_dir.exists():
+
     app.mount("/static", StaticFiles(directory=str(banc_ui_dir)), name="banc_static")
 
     @app.get("/")

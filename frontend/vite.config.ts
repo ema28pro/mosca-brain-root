@@ -6,10 +6,11 @@ export default defineConfig({
   plugins: [react()],
   base: "./",
   build: {
-    outDir: path.resolve(__dirname, "../web"),
-    emptyOutDir: false,
+    outDir: path.resolve(__dirname, "../dist"),
+    emptyOutDir: true,
     sourcemap: false,
   },
+
   server: {
     port: 5173,
     proxy: {

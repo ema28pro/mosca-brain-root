@@ -58,6 +58,8 @@ Permite conectar órganos sensoriales reales (visión retinotópica por omatidio
    - Permite estimular neuronas descendentes identificadas (Fibra Gigante DNp01, Marcha P9/DNp09) y medir espigas en motoneuronas identificadas de patas y alas en tiempo real.
    - Interfaz interactiva local con raster plot, curvas de reclutamiento y trazado 3D de coordenadas reales: `http://localhost:8000/banc/`.
    - Consulta la [Guía Completa de Simulación BANC](docs/BANC_SIMULATION_GUIDE.md).
+7. **Guía de Ejecución y Servidores**:
+   - Consulta la [Guía de Servidores, Agentes y Entornos Web](docs/SERVERS_AND_AGENTS_GUIDE.md) para ver los comandos de Uvicorn, selección de agentes y cómo conectar Tetris y los cockpits web.
 
 ---
 

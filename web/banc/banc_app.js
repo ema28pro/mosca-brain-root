@@ -10,37 +10,13 @@ let currentSimResults = null;
 let graphMode = 'schematic'; // 'schematic' or 'anatomical'
 
 // Dynamic API Base URL supporting file://, /banc/, and root deployments
-let apiBase = window.location.protocol === 'file:'
+const apiBase = window.location.protocol === 'file:'
   ? 'http://127.0.0.1:8000/api/banc'
   : '/api/banc';
 
-function showConnectionWarning() {
-  const el = document.getElementById('connection-warning');
-  if (el) el.style.display = 'flex';
-  const badge = document.getElementById('backend-status-badge');
-  if (badge) {
-    badge.className = 'badge badge-dark';
-    badge.textContent = 'Servidor local no detectado';
-    badge.style.color = '#ff9980';
-    badge.style.borderColor = '#dc5032';
-  }
-}
-
-function hideConnectionWarning() {
-  const el = document.getElementById('connection-warning');
-  if (el) el.style.display = 'none';
-  const badge = document.getElementById('backend-status-badge');
-  if (badge) {
-    badge.className = 'badge badge-success';
-    badge.textContent = 'Simulator: Conectado a FastAPI';
-    badge.style.color = '';
-    badge.style.borderColor = '';
-  }
-}
-
-
 // Elements
 const circuitSelect = document.getElementById('circuit-select');
+
 const stimSlider = document.getElementById('stim-slider');
 const stimVal = document.getElementById('stim-val');
 const durSlider = document.getElementById('dur-slider');
@@ -145,7 +121,6 @@ async function loadCircuit(circuitId) {
     const res = await fetch(`${apiBase}/circuit/${circuitId}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     currentCircuitData = await res.json();
-    hideConnectionWarning();
 
     // Update Stats Box
     statNeurons.textContent = currentCircuitData.stats.total_neurons;
@@ -157,9 +132,9 @@ async function loadCircuit(circuitId) {
     drawCircuitGraph();
   } catch (err) {
     console.error('Failed to load circuit:', err);
-    showConnectionWarning();
   }
 }
+
 
 
 // Compute Graph Node Coordinates
@@ -373,13 +348,12 @@ async function runSimulation() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     currentSimResults = await res.json();
-    hideConnectionWarning();
 
     renderSimulationResults(currentSimResults);
   } catch (err) {
     console.error('Simulation error:', err);
-    showConnectionWarning();
   } finally {
+
 
     btnRun.disabled = false;
     document.querySelector('.btn-spinner').style.display = 'none';

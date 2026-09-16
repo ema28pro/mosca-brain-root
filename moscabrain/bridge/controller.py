@@ -148,6 +148,12 @@ class GameBridge:
         """
         self.fly.punish(amount=amount, reason=reason)
 
+    def aversion(self, amount: float = 1.0, reason: str = "juego_colision_muerte"):
+        """
+        Alias de punish(): llama esta función cuando la mosca choque o sufra un evento aversivo.
+        """
+        return self.punish(amount=amount, reason=reason)
+
     def expose_odor(self, odor_name: str, concentration: float = 1.0):
         """
         Muestra un olor a la mosca para representar un estado químico o del juego

@@ -42,7 +42,9 @@ class FlyWireConnectomeTopology:
         self.p9_left_idx: int = 0
         self.p9_right_idx: int = 0
         self.pam_dopamine_indices: np.ndarray = np.array([], dtype=np.int32)
+        self.ppl1_dopamine_indices: np.ndarray = np.array([], dtype=np.int32)
         self.mbon_approach_indices: np.ndarray = np.array([], dtype=np.int32)
+        self.mbon_avoid_indices: np.ndarray = np.array([], dtype=np.int32)
         self.optic_left_indices: np.ndarray = np.array([], dtype=np.int32)
         self.optic_right_indices: np.ndarray = np.array([], dtype=np.int32)
 
@@ -60,6 +62,10 @@ class FlyWireConnectomeTopology:
         self.adn1_indices: np.ndarray = np.array([], dtype=np.int32)
         self.or56a_odor_ids: List[int] = []
         self.or56a_indices: np.ndarray = np.array([], dtype=np.int32)
+
+        # Intermediate biological relay populations (discovered from connectivity)
+        self.pn_indices: np.ndarray = np.array([], dtype=np.int32)   # Projection Neurons (AL→MB relay)
+        self.kc_indices: np.ndarray = np.array([], dtype=np.int32)   # Kenyon Cells (MB intrinsic)
 
         # Cache de matriz sináptica real
         self._sparse_weights: Optional[sparse.csr_matrix] = None
@@ -248,6 +254,23 @@ class FlyWireConnectomeTopology:
             self.mbon_approach_indices = top_mbon[pam_strengths[top_mbon] > 0].astype(np.int32)
         else:
             self.mbon_approach_indices = np.array([], dtype=np.int32)
+
+        # Identificar neuronas PPL1 dopaminérgicas (clúster aversivo de FlyWire)
+        # Se seleccionan poblaciones del complejo MB distintas de PAM con vías aversivas
+        if len(self.pam_dopamine_indices) > 0:
+            all_cands = np.argsort(strengths)[-96:-32]
+            ppl1_cands = [idx for idx in all_cands if idx not in self.pam_dopamine_indices]
+            self.ppl1_dopamine_indices = np.array(ppl1_cands[:32], dtype=np.int32)
+        else:
+            self.ppl1_dopamine_indices = np.arange(250, 282, dtype=np.int32)
+
+        if len(self.ppl1_dopamine_indices) > 0:
+            ppl1_cols = self._sparse_weights[:, self.ppl1_dopamine_indices]
+            ppl1_strengths = np.array(np.abs(ppl1_cols).sum(axis=1)).ravel()
+            top_avoid = np.argsort(ppl1_strengths)[-24:]
+            self.mbon_avoid_indices = top_avoid[ppl1_strengths[top_avoid] > 0].astype(np.int32)
+        else:
+            self.mbon_avoid_indices = np.array([], dtype=np.int32)
 
         return self._sparse_weights
 

@@ -52,6 +52,10 @@ class DopamineSystem:
         """Estímulo aversivo: activa el clúster PPL1."""
         self.trigger(amount=amount, is_reward=False, reason=reason)
 
+    def aversion(self, amount: float = 1.0, reason: str = "aversion"):
+        """Estímulo aversivo / castigo (alias de punish): activa el clúster PPL1."""
+        return self.punish(amount=amount, reason=reason)
+
     def add_condition(self, condition_func: Callable[[], Optional[float]], reason: str = "trigger_auto"):
         """
         Registra una función condicional que se evalúa en cada paso.

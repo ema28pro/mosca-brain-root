@@ -9,8 +9,9 @@ import time
 from typing import Dict, List, Optional
 import numpy as np
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
 from pydantic import BaseModel
 import uvicorn
 

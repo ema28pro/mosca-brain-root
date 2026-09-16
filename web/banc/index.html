@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BANC Connectome Simulation | Drosophila Sensorimotor Circuit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./banc_style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="masthead">
+      <div class="masthead-brand">
+        <div class="brand-pill">BANC v888 • Nature 2026</div>
+        <h1>Drosophila Brain-to-VNC Connectome Simulation</h1>
+        <p class="masthead-subtitle">
+          Constrained Leaky Integrate-and-Fire simulation of descending-to-motor pathways in the adult female fruit fly.
+        </p>
+      </div>
+      <div class="masthead-badges">
+        <span class="badge badge-accent">Shiu et al. (Nature 2024) Dynamics</span>
+        <span class="badge badge-dark">188k Whole-CNS Graph</span>
+        <span class="badge badge-success" id="backend-status-badge">Simulator: Vectorized CPU Ready</span>
+      </div>
+    </header>
+
+    <!-- Scientific Context Alert Banner -->
+    <div class="scientific-banner">
+      <div class="banner-icon">🔬</div>
+      <div class="banner-content">
+        <strong>Experiment Hypothesis:</strong> Can descending command stimulation (e.g. Giant Fiber escape or P9 walking) recruit identified thoracic motor neurons via documented anatomical synapses?
+        <span class="caveat-tag">Note: Motor neuron firing establishes physiological synaptic drive; physical walking/flying requires biomechanical muscle and body feedback.</span>
+      </div>
+    </div>
+
+    <!-- Main Workspace Layout -->
+    <div class="workspace-grid">
+      <!-- Left Column: Controls & Configuration -->
+      <aside class="control-panel panel-card">
+        <div class="panel-header">
+          <h2>Experiment Parameters</h2>
+          <span class="panel-subtitle">Configure stimulus & biophysics</span>
+        </div>
+
+        <!-- Circuit Selection -->
+        <div class="control-group">
+          <label for="circuit-select">Descending Circuit Target</label>
+          <select id="circuit-select" class="form-select">
+            <option value="giant_fiber" selected>Giant Fiber (DNp01) Escape & Jump Circuit</option>
+            <option value="p9">P9 (DNp09) Forward Locomotor Walking Circuit</option>
+          </select>
+          <span class="input-hint" id="circuit-description">DNp01 -> Thoracic VNC -> TTMn (jump) & DLMn (flight)</span>
+        </div>
+
+        <!-- Stimulation Frequency -->
+        <div class="control-group">
+          <div class="slider-header">
+            <label for="stim-slider">Stimulation Rate</label>
+            <span class="val-badge" id="stim-val">150 Hz</span>
+          </div>
+          <input type="range" id="stim-slider" min="0" max="300" step="10" value="150" class="form-slider">
+          <div class="slider-ticks">
+            <span>0 Hz (Baseline)</span>
+            <span>150 Hz</span>
+            <span>300 Hz</span>
+          </div>
+        </div>
+
+        <!-- Trial Duration -->
+        <div class="control-group">
+          <div class="slider-header">
+            <label for="dur-slider">Trial Duration</label>
+            <span class="val-badge" id="dur-val">500 ms</span>
+          </div>
+          <input type="range" id="dur-slider" min="100" max="1000" step="50" value="500" class="form-slider">
+        </div>
+
+        <!-- Synapse Threshold -->
+        <div class="control-group">
+          <div class="slider-header">
+            <label for="cutoff-slider">Synapse Count Cutoff</label>
+            <span class="val-badge" id="cutoff-val">&ge; 3 synapses</span>
+          </div>
+          <input type="range" id="cutoff-slider" min="1" max="10" step="1" value="3" class="form-slider">
+        </div>
+
+        <!-- Weight Scale Multiplier -->
+        <div class="control-group">
+          <div class="slider-header">
+            <label for="weight-slider">Synaptic Weight Scale</label>
+            <span class="val-badge" id="weight-val">1.5&times;</span>
+          </div>
+          <input type="range" id="weight-slider" min="0.5" max="3.0" step="0.1" value="1.5" class="form-slider">
+        </div>
+
+        <!-- Background Noise -->
+        <div class="control-group">
+          <div class="slider-header">
+            <label for="bg-slider">Background Noise Rate</label>
+            <span class="val-badge" id="bg-val">20 Hz</span>
+          </div>
+          <input type="range" id="bg-slider" min="0" max="50" step="5" value="20" class="form-slider">
+        </div>
+
+        <!-- Seed -->
+        <div class="control-group inline-group">
+          <label for="seed-input">Random Seed</label>
+          <input type="number" id="seed-input" value="42" class="form-input-number">
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="button-stack">
+          <button id="btn-run" class="btn btn-primary">
+            <span class="btn-text">Run Simulation</span>
+            <span class="btn-spinner" style="display: none;"></span>
+          </button>
+          <button id="btn-sweep" class="btn btn-secondary">
+            Dose-Response Sweep
+          </button>
+          <div class="button-row">
+            <button id="btn-reset" class="btn btn-subtle">Reset Baseline</button>
+            <button id="btn-export" class="btn btn-outline">Export JSON</button>
+          </div>
+        </div>
+
+        <!-- Circuit Stats Summary -->
+        <div class="circuit-stats-box" id="circuit-stats">
+          <div class="stat-item">
+            <span class="stat-label">Neurons</span>
+            <span class="stat-val" id="stat-neurons">--</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Synapses</span>
+            <span class="stat-val" id="stat-synapses">--</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Motor Targets</span>
+            <span class="stat-val" id="stat-motor">--</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Stability</span>
+            <span class="stat-val status-pill status-healthy" id="stat-stability">Healthy</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center & Right: Visualizations -->
+      <main class="visualization-area">
+        <!-- Top Visual Row: Network View & Voltage Trace -->
+        <div class="visual-row two-col">
+          <!-- Circuit Graph Panel -->
+          <section class="panel-card visual-card">
+            <div class="card-header">
+              <div>
+                <h3>Connectome Circuit Topology</h3>
+                <span class="card-caption" id="graph-mode-caption">Schematic Layered Flow (Brain DN &rarr; VNC Interneurons &rarr; Motor Output)</span>
+              </div>
+              <div class="toggle-group">
+                <button id="btn-view-schematic" class="btn-toggle active">Schematic</button>
+                <button id="btn-view-anatomical" class="btn-toggle">Anatomical 3D nm</button>
+              </div>
+            </div>
+            <div class="canvas-container">
+              <canvas id="circuit-canvas" width="600" height="320"></canvas>
+              <div class="graph-legend">
+                <span class="legend-item"><span class="dot dot-input"></span> Stimulated DN</span>
+                <span class="legend-item"><span class="dot dot-inter"></span> VNC Interneuron</span>
+                <span class="legend-item"><span class="dot dot-motor"></span> Motor Output</span>
+              </div>
+              <div id="node-tooltip" class="tooltip" style="display: none;"></div>
+            </div>
+          </section>
+
+          <!-- Voltage Traces -->
+          <section class="panel-card visual-card">
+            <div class="card-header">
+              <div>
+                <h3>Membrane Potentials V<sub>m</sub>(t)</h3>
+                <span class="card-caption">LIF integration & threshold dynamics (-45 mV threshold)</span>
+              </div>
+              <div class="trace-legend" id="trace-legend">
+                <span class="legend-item"><span class="line line-dn"></span> DNp01 Input</span>
+                <span class="legend-item"><span class="line line-motor"></span> Motor Neuron (TTMn/DLM)</span>
+              </div>
+            </div>
+            <div class="canvas-container">
+              <canvas id="voltage-canvas" width="600" height="320"></canvas>
+            </div>
+          </section>
+        </div>
+
+        <!-- Middle Visual Row: Spike Raster Plot -->
+        <section class="panel-card visual-card raster-card">
+          <div class="card-header">
+            <div>
+              <h3>Spike Raster Plot</h3>
+              <span class="card-caption">Action potential timing across all simulated circuit neurons</span>
+            </div>
+            <div class="raster-metrics">
+              <span>Total Spikes: <strong id="raster-spike-count">0</strong></span>
+              <span>Compute: <strong id="raster-compute-ms">0.0 ms</strong></span>
+              <span>Motor Rate: <strong id="raster-motor-rate">0.0 Hz</strong></span>
+            </div>
+          </div>
+          <div class="canvas-container raster-container">
+            <canvas id="raster-canvas" width="1200" height="220"></canvas>
+          </div>
+        </section>
+
+        <!-- Bottom Row: Motor Neuron Response Comparison Table & Bar Chart -->
+        <section class="panel-card visual-card motor-output-card">
+          <div class="card-header">
+            <div>
+              <h3>Motor Neuron Recruitment Comparison</h3>
+              <span class="card-caption">Baseline (0 Hz) vs Stimulated Rate (&Delta; Hz) in Identified Effector Neurons</span>
+            </div>
+            <div class="recruited-summary" id="recruited-summary">
+              Active Motor Units: <strong>0 / 0</strong>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="motor-table" id="motor-table">
+              <thead>
+                <tr>
+                  <th>Cell Type</th>
+                  <th>Body Part Effector</th>
+                  <th>Neuromere</th>
+                  <th>Root ID</th>
+                  <th>Baseline</th>
+                  <th>Stimulated</th>
+                  <th>&Delta; Rate</th>
+                  <th>Activity Bar</th>
+                </tr>
+              </thead>
+              <tbody id="motor-table-body">
+                <tr>
+                  <td colspan="8" class="text-muted text-center">Click "Run Simulation" to evaluate motor recruitment.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Dose-Response Curve Modal / Section -->
+        <section class="panel-card visual-card sweep-card" id="sweep-section" style="display: none;">
+          <div class="card-header">
+            <div>
+              <h3>Stimulation Sensitivity Curve (Dose-Response)</h3>
+              <span class="card-caption">Motor neuron population firing rate across stimulation frequencies (0 - 250 Hz)</span>
+            </div>
+            <button id="btn-close-sweep" class="btn-close">&times;</button>
+          </div>
+          <div class="canvas-container">
+            <canvas id="sweep-canvas" width="1200" height="200"></canvas>
+          </div>
+        </section>
+
+        <!-- Provenance & Assumptions Accordion -->
+        <section class="panel-card provenance-card">
+          <details>
+            <summary class="provenance-summary">
+              <span>Scientific Assumptions, Physiological Mapping & Data Provenance</span>
+              <span class="chevron">&dtrif;</span>
+            </summary>
+            <div class="provenance-details">
+              <div class="prov-grid">
+                <div>
+                  <h4>1. Data Provenance & Repositories</h4>
+                  <p><strong>Dataset Paper:</strong> <a href="https://www.nature.com/articles/s41586-026-10735-w" target="_blank" style="color: var(--accent-amber); text-decoration: underline;">Bates, Phelps, Kim et al. (Nature 2026)</a></p>
+                  <p><strong>Data & Tutorial Repo:</strong> <a href="https://github.com/sjcabs/fly_connectome_data_tutorial" target="_blank" style="color: var(--accent-amber); text-decoration: underline;">sjcabs/fly_connectome_data_tutorial</a></p>
+                  <p><strong>BANC Tools:</strong> <a href="https://github.com/jasper-tms/the-BANC-fly-connectome" target="_blank" style="color: var(--accent-amber); text-decoration: underline;">the-BANC-fly-connectome</a> | <a href="https://natverse.org/bancr/" target="_blank" style="color: var(--accent-amber); text-decoration: underline;">bancr</a></p>
+                  <p><strong>Materialization:</strong> v888 (synapse table v3, size &ge; 10).</p>
+                </div>
+                <div>
+                  <h4>2. Simulation Precedent & Model Paper</h4>
+                  <p><strong>Model Paper:</strong> <a href="https://www.nature.com/articles/s41586-024-07763-9" target="_blank" style="color: var(--accent-amber); text-decoration: underline;">Shiu et al. (Nature 2024)</a></p>
+                  <p><strong>Model Repo:</strong> <a href="https://github.com/philshiu/Drosophila_brain_model" target="_blank" style="color: var(--accent-amber); text-decoration: underline;">philshiu/Drosophila_brain_model</a></p>
+                  <p><code>dv/dt = (v_0 - v + g) / &tau;_m</code> (&tau;<sub>m</sub> = 20 ms, v<sub>0</sub> = -52 mV, v<sub>th</sub> = -45 mV)</p>
+                  <p><code>dg/dt = -g / &tau;_syn</code> (&tau;<sub>syn</sub> = 5 ms, delay = 1.8 ms, refractory = 2.2 ms)</p>
+                </div>
+                <div>
+                  <h4>3. Neurotransmitter Sign Rules</h4>
+                  <p><strong>Acetylcholine:</strong> Excitatory (+1, nicotinic receptors).</p>
+                  <p><strong>GABA:</strong> Inhibitory (-1, Rdl chloride channels).</p>
+                  <p><strong>Glutamate:</strong> Inhibitory (-1 in central nervous system via GluCl-&alpha;).</p>
+                  <p><strong>Dopamine/Octopamine:</strong> Modulatory (0 in fast ionotropic LIF).</p>
+                </div>
+                <div>
+                  <h4>4. Limitations & Non-claims</h4>
+                  <p>• Motor neuron firing demonstrates synaptic activation, NOT physical movement. Locomotion requires biomechanical body and muscle models.</p>
+                  <p>• Synapse counts reflect structural contact frequency rather than measured quantal physiological efficacy.</p>
+                </div>
+              </div>
+            </div>
+          </details>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="./banc_app.js"></script>
+</body>
+</html>

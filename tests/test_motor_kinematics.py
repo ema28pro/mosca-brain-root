@@ -13,8 +13,8 @@ def test_p9_forward_walking_thrust():
     topo = fly.topology
     
     # Inyectar corriente motora suficiente en P9 para alcanzar umbral de disparo
-    fly.engine.syn_currents[topo.p9_left_idx] += 80.0
-    fly.engine.syn_currents[topo.p9_right_idx] += 80.0
+    fly.engine.syn_currents[topo.p9_left_idx] += 120.0
+    fly.engine.syn_currents[topo.p9_right_idx] += 120.0
     fly.engine.step()
     
     fwd, yaw, escape = fly.engine.get_motor_output()

@@ -53,39 +53,6 @@ Representa el paquete de control cinemático resultante:
 
 ---
 
-### 3.3 Clase `FlyMotorBody`
-Implementa el filtro pasa-bajos neuromuscular que suaviza las oscilaciones neuronales de alta frecuencia, simulando la inercia biomecánica de los músculos de las patas y alas.
+## 4. Decodificación Cinemática y Física
+La decodificación motora se realiza directamente en el conectoma a través de `self.engine.get_motor_output()` y `self._update_physics()` en `FlyWireAgent` y `BANCAgent`, asegurando latencia mínima sin capas intermedias obsoletas.
 
-#### Atributos de Suavizado:
-- `fwd_activity`: Actividad acumulada de avance.
-- `steer_l_activity`, `steer_r_activity`: Actividad acumulada de dirección izquierda/derecha.
-- `escape_activity`: Actividad acumulada de escape.
-- `proboscis_activity`: Actividad de probóscide.
-- `groom_activity`: Actividad de acicalamiento.
-
----
-
-## 4. Métodos y Funciones Detalladas
-
-### `FlyMotorBody.__init__(connectome_engine)`
-- **Entradas**: `connectome_engine` (instancia de `ConnectomeEngine`).
-- Inicializa los acumuladores de inercia muscular en cero.
-
----
-
-### `FlyMotorBody.decode_action() -> ActionOutput`
-- **Propósito**: Ejecuta la cascada jerárquica de toma de decisiones etológicas según prioridades biológicas de supervivencia:
-  1. **Filtrado Temporal Neuromuscular**:
-     $$A_{\text{músculo}}(t) = 0.7 \cdot A_{\text{músculo}}(t-1) + 0.3 \cdot \text{disparo\_neuronal}(t)$$
-  2. **Prioridad 1: Reflejo de Escape (Giant Fiber)**:
-     - Si hay picos en `DN_GIANT_FIBER` o la actividad excede $0.01$, se activa inmediatamente `ESCAPE_JUMP`. Retorna empuje máximo $1.0$, giro aleatorio $\pm 0.8$, y frecuencia de alas de $210\text{ Hz}$.
-  3. **Prioridad 2: Alimentación (DN_PROBOSCIS)**:
-     - Si `proboscis_activity > 0.12`, entra en `FEEDING`, frenando a $0.05$ de empuje y desplegando la probóscide.
-  4. **Prioridad 3: Acicalamiento (DN_GROOMING)**:
-     - Si `groom_activity > 0.2`, activa `GROOMING` en posición estática.
-  5. **Prioridad 4: Marcha y Navegación Normal**:
-     - Calcula el empuje neto:
-       $$\text{thrust} = \text{clip}(2.5 \cdot A_{\text{fwd}} + 0.15, 0.0, 1.0)$$
-     - Calcula la dirección neta por diferencia bilateral:
-       $$\text{steer} = \text{clip}(3.0 \cdot (A_{\text{steer\_r}} - A_{\text{steer\_l}}), -1.0, 1.0)$$
-- **Salida**: Objeto `ActionOutput` con la acción resultante.

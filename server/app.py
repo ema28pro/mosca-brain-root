@@ -516,12 +516,11 @@ async def websocket_endpoint(websocket: WebSocket):
             connected_websockets.remove(websocket)
 
 
-# Servir la interfaz web estática de React (busca primero 'dist' de la raíz, 'web_server/dist', o 'web')
+# Servir la interfaz web estática de React ('web_server/dist' o 'dist')
 root_dir = Path(__file__).resolve().parent.parent
-dist_dir = root_dir / "dist"
-if not dist_dir.exists():
-    dist_dir = root_dir / "web_server" / "dist"
-web_dir = dist_dir if dist_dir.exists() else (root_dir / "web")
+web_dir = root_dir / "web_server" / "dist"
+if not web_dir.exists():
+    web_dir = root_dir / "dist"
 
 if web_dir.exists():
     app.mount("/static", StaticFiles(directory=str(web_dir)), name="static")
@@ -539,9 +538,6 @@ try:
     app.include_router(banc_router)
 
     banc_web_dir = root_dir / "web_banc"
-    if not banc_web_dir.exists():
-        banc_web_dir = root_dir / "web" / "banc"
-
     if banc_web_dir.exists():
         app.mount("/banc/static", StaticFiles(directory=str(banc_web_dir)), name="banc_static")
 

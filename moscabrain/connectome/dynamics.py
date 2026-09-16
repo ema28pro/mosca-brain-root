@@ -20,11 +20,9 @@ class ConnectomeEngine:
         self,
         topology: Optional[FlyWireConnectomeTopology] = None,
         dt: float = 0.002,   # 2 milisegundos por paso
-        noise_level: float = 0.02,
     ):
         self.topology = topology or FlyWireConnectomeTopology()
         self.dt = dt
-        self.noise_level = noise_level
         self.N = self.topology.total_neurons  # 138.639 neuronas reales
 
         # Parámetros biofísicos de Drosophila (Shiu et al. / Nature 2024)
@@ -195,11 +193,11 @@ class ConnectomeEngine:
         # 1. Modulación Weathervane / Surge-and-Cast biológica:
         # Si la mosca está desalineada (|contrast_norm| > 0.15), frena el avance P9
         # para que el cuerpo pivote en el lugar antes de acercarse, evitando pasar de largo.
-        alignment = max(0.05, 1.0 - abs(contrast_norm) * 1.2) ** 2
+        alignment = max(0.25, 1.0 - abs(contrast_norm) * 0.6)
         p9_base = max_c * 16.0 * alignment
 
-        self.syn_currents[self.topology.p9_left_idx] += p9_base
-        self.syn_currents[self.topology.p9_right_idx] += p9_base
+        self.syn_currents[self.topology.p9_left_idx] += p9_base * (1.0 - 0.4 * contrast_norm)
+        self.syn_currents[self.topology.p9_right_idx] += p9_base * (1.0 + 0.4 * contrast_norm)
 
         # 2. DNa: Activación proporcional con inhibición contralateral recíproca activa
         steer_current = abs(contrast_norm) * 35.0
@@ -394,15 +392,27 @@ class ConnectomeEngine:
             self.syn_currents[self.topology.mn9_indices] = 0.0
             self.firing_rates[self.topology.mn9_indices] = 0.0
 
-        # Normalizar ráfaga aguda de MBONs apetitivos tras consumir la gota
+        # Normalizar ráfaga aguda de MBONs apetitivos y aversivos tras consumir la gota
         if len(self.topology.mbon_approach_indices) > 0:
             self.syn_currents[self.topology.mbon_approach_indices] = 0.0
             self.firing_rates[self.topology.mbon_approach_indices] = 0.0
+
+        mbon_avoid_indices = getattr(self.topology, 'mbon_avoid_indices', np.array([], dtype=np.int32))
+        if len(mbon_avoid_indices) > 0:
+            self.syn_currents[mbon_avoid_indices] = 0.0
+            self.firing_rates[mbon_avoid_indices] = 0.0
 
         # Normalizar clúster dopaminérgico PAM post-recompensa inmediata
         if len(self.topology.pam_dopamine_indices) > 0:
             self.syn_currents[self.topology.pam_dopamine_indices] = 0.0
             self.firing_rates[self.topology.pam_dopamine_indices] = 0.0
+
+        ppl1_indices = getattr(self.topology, 'ppl1_dopamine_indices', np.array([], dtype=np.int32))
+        if len(ppl1_indices) > 0:
+            self.syn_currents[ppl1_indices] = 0.0
+            self.firing_rates[ppl1_indices] = 0.0
+
+        self.aversive_arousal = 0.0
 
         # Restablecer potencial de reposo en neuronas hiper-despolarizadas y limpiar corrientes
         np.minimum(self.V, self.v_rest, out=self.V)

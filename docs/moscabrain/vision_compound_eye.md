@@ -7,7 +7,6 @@ Emula:
 - La distribución retinotópica angular de los omatidios en los ojos izquierdo y derecho a lo largo de un **campo de visión panorámico (FOV)** de hasta $270^\circ$.
 - Campos receptivos gaussianos con atenuación lumínica inversamente proporcional a la distancia.
 - Detección biológica de estímulos de aproximación o sombras amenazantes (*looming*) mediante el cálculo de la tasa de expansión angular aparente ($d\theta/dt$) para activar neuronas LC4/LPLC2.
-- Una interfaz para alimentar imágenes de videojuegos o cámaras externas (`feed_frame`) en modos estereoscópicos (`split` o `duplicate`).
 
 ---
 
@@ -76,17 +75,6 @@ import numpy as np
        - Si $\theta_{\text{sub}} > 0.4$ y $d < 120$: genera intensidad de *looming*: $\text{clip}(5.0 \cdot E + 0.8 \cdot \theta_{\text{sub}}, 0, 2.0)$.
   3. **Adición de Ruido y Saturación**:
      - Agrega ruido blanco gaussiano $\mathcal{N}(0, \sigma_{\text{ruido}})$ y escala por `sensitivity`.
-- **Salida**: `(left_intensities, right_intensities, looming_signal)`.
-
----
-
-### `CompoundEye.feed_frame(frame, stereo_mode="split", mode="luminance") -> Tuple[np.ndarray, np.ndarray, float]`
-- **Propósito**: Convierte matrices de píxeles (RGB o escala de grises) en activación omatidial directa.
-- **Lógica**:
-  - Si es RGB, convierte a escala de grises: $0.299 R + 0.587 G + 0.114 B$.
-  - Si `stereo_mode == "split"`, corta la imagen en dos mitades izquierda y derecha.
-  - Promedia columnas verticales por cada omatidio.
-  - Si el brillo medio global cae bruscamente respecto al frame anterior ($\Delta > 0.35$), infiere una sombra inminente y activa la señal de *looming*.
 - **Salida**: `(left_intensities, right_intensities, looming_signal)`.
 
 ---

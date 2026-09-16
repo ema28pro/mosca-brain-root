@@ -63,10 +63,6 @@ class FlyWireConnectomeTopology:
         self.or56a_odor_ids: List[int] = []
         self.or56a_indices: np.ndarray = np.array([], dtype=np.int32)
 
-        # Intermediate biological relay populations (discovered from connectivity)
-        self.pn_indices: np.ndarray = np.array([], dtype=np.int32)   # Projection Neurons (AL→MB relay)
-        self.kc_indices: np.ndarray = np.array([], dtype=np.int32)   # Kenyon Cells (MB intrinsic)
-
         # Cache de matriz sináptica real
         self._sparse_weights: Optional[sparse.csr_matrix] = None
         self._df_conn: Optional[pd.DataFrame] = None

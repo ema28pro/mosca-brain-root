@@ -156,23 +156,6 @@ class FlyWireAgent:
         mn9_act = (float(np.mean(self.engine.firing_rates[self.topology.mn9_indices]))
                    if len(self.topology.mn9_indices) > 0 else 0.0)
 
-        # En modo BANC (Whole-CNS), las motoneuronas del VNC modulan la respuesta
-        if self.connectome_mode == "banc":
-            if escape or looming > 0.1:
-                # Simular reclutamiento motor en el circuito de escape BANC (DNp01 -> TTMn / DLMn)
-                banc_sim = self._get_banc_gf_simulator()
-                sim_res = banc_sim.run_simulation(stim_rate=150.0, t_run=50.0)
-                m_rate = sim_res["population_rates_hz"]["motor_neurons"]
-                self.banc_telemetry["motor_rate_hz"] = m_rate
-                self.banc_telemetry["jump_motor_active"] = (m_rate > 0.1)
-                if sim_res["motor_outputs"]:
-                    self.banc_telemetry["top_active_motor_neuron"] = sim_res["motor_outputs"][0]["cell_type"]
-                escape = True
-            else:
-                self.banc_telemetry["jump_motor_active"] = False
-                self.banc_telemetry["motor_rate_hz"] = round(fwd * 12.0, 2)
-                self.banc_telemetry["top_active_motor_neuron"] = "tibia_flexor" if fwd > 0.1 else None
-
         if self.is_feeding:
             # Contacto sensorial con alimento: la probóscide bloquea la locomoción.
             self.feeding_counter += 1

@@ -24,7 +24,7 @@ class BANCAgent(BaseFlyAgent):
 
     def __init__(
         self,
-        circuit_id: str = "giant_fiber",
+        circuit_id: str = "sensorimotor",
         synapse_threshold: int = 3,
         physiology_params: Optional[Dict[str, Any]] = None,
         dt: float = 0.0002,  # 0.2 ms
@@ -35,12 +35,14 @@ class BANCAgent(BaseFlyAgent):
 
         # 1. Cargar circuito BANC aislado
         self.circuit_mgr = BANCCircuitManager()
-        if circuit_id == "giant_fiber":
+        if circuit_id == "sensorimotor":
+            self.circuit = self.circuit_mgr.extract_sensorimotor_circuit(synapse_threshold=synapse_threshold)
+        elif circuit_id == "giant_fiber":
             self.circuit = self.circuit_mgr.extract_giant_fiber_circuit(synapse_threshold=synapse_threshold)
         elif circuit_id == "p9":
             self.circuit = self.circuit_mgr.extract_p9_circuit(synapse_threshold=synapse_threshold)
         else:
-            self.circuit = self.circuit_mgr.extract_giant_fiber_circuit(synapse_threshold=synapse_threshold)
+            self.circuit = self.circuit_mgr.extract_sensorimotor_circuit(synapse_threshold=synapse_threshold)
 
         # 2. Inicializar simulador LIF especializado
         params = dict(DEFAULT_PHYSIOLOGY_PARAMS)
@@ -60,6 +62,9 @@ class BANCAgent(BaseFlyAgent):
             "active_mode": "banc",
             "circuit_id": self.circuit_id,
             "motor_rate_hz": 0.0,
+            "left_motor_rate_hz": 0.0,
+            "right_motor_rate_hz": 0.0,
+            "jump_motor_rate_hz": 0.0,
             "jump_motor_active": False,
             "top_active_motor_neuron": None,
             "total_spikes": 0,
@@ -99,12 +104,14 @@ class BANCAgent(BaseFlyAgent):
         self._total_punishments = val
 
     def set_circuit(self, circuit_id: str, synapse_threshold: Optional[int] = None):
-        """Cambia el circuito BANC activo entre 'giant_fiber' y 'p9'."""
+        """Cambia el circuito BANC activo entre 'sensorimotor', 'giant_fiber' y 'p9'."""
         if circuit_id == self.circuit_id:
             return
         self.circuit_id = circuit_id
-        thresh = synapse_threshold or (3 if circuit_id == "giant_fiber" else 5)
-        if circuit_id == "giant_fiber":
+        thresh = synapse_threshold or (3 if circuit_id in ("giant_fiber", "sensorimotor") else 5)
+        if circuit_id == "sensorimotor":
+            self.circuit = self.circuit_mgr.extract_sensorimotor_circuit(synapse_threshold=thresh)
+        elif circuit_id == "giant_fiber":
             self.circuit = self.circuit_mgr.extract_giant_fiber_circuit(synapse_threshold=thresh)
         else:
             self.circuit = self.circuit_mgr.extract_p9_circuit(synapse_threshold=thresh)
@@ -128,20 +135,23 @@ class BANCAgent(BaseFlyAgent):
         self,
         threats: Optional[List[Dict[str, Any]]] = None,
         forward_drive_hz: float = 0.0,
-        trial_duration_ms: float = 50.0,
+        lateral_drive_hz: float = 0.0,
+        aversive_drive_hz: float = 0.0,
+        trial_duration_ms: float = 40.0,
     ) -> ActionOutput:
         """
         Ejecuta un paso de simulación biofísica a través del conectoma BANC:
-        1. Detecta amenazas (looming) o comando de marcha.
-        2. Estimula neuronas descendentes correspondientes (DNp01 / DNp09).
-        3. Integra dinámicas LIF hasta las motoneuronas torácicas.
-        4. Decodifica la respuesta motora real (salto TTMn, vuelo DLMn o flexión de patas).
+        1. Integra estímulos visuales direccionales y aversivos.
+        2. Estimula neuronas descendentes correspondientes (DNp01 Giant Fiber / DNp09 locomotoras).
+        3. Integra dinámicas LIF en el VNC hasta las motoneuronas torácicas.
+        4. Decodifica la respuesta motora real (salto TTMn, vuelo DLMn, flexión/extensión de patas).
         """
         threats = threats or []
-        has_threat = len(threats) > 0
+        has_threat = len(threats) > 0 or aversive_drive_hz > 10.0 or self._dopamine_level < -0.3
 
-        # Si hay amenaza, inyectar alta frecuencia a la Fibra Gigante
-        stim_rate = 150.0 if has_threat else forward_drive_hz
+        # Si hay amenaza o aversión, inyectar alta frecuencia al circuito de escape (DNp01)
+        base_drive = max(forward_drive_hz, abs(lateral_drive_hz))
+        stim_rate = 180.0 if has_threat else max(20.0, base_drive)
 
         # Ejecutar simulación LIF
         sim_res = self.simulator.run_simulation(
@@ -153,40 +163,48 @@ class BANCAgent(BaseFlyAgent):
         dn_rate = sim_res["population_rates_hz"]["descending_inputs"]
         total_spikes = sim_res["total_spikes"]
 
-        # Evaluar motoneurona de salto (TTMn) y vuelo (DLMn)
-        jump_active = False
-        top_motor = None
-        if sim_res["motor_outputs"]:
-            top_motor = sim_res["motor_outputs"][0]["cell_type"]
-            for m in sim_res["motor_outputs"]:
-                if "tergotrochanter" in m["cell_type"].lower() and m["firing_rate_hz"] > 0:
-                    jump_active = True
-                    break
+        # Evaluar motoneuronas por lado y tipo funcional
+        motor_outputs = sim_res.get("motor_outputs", [])
+        left_m = [m for m in motor_outputs if m.get("side") == "left"]
+        right_m = [m for m in motor_outputs if m.get("side") == "right"]
+        jump_m = [m for m in motor_outputs if "tergotrochanter" in m.get("cell_type", "").lower()]
 
-        recruited = sum(1 for m in sim_res["motor_outputs"] if m["firing_rate_hz"] > 0)
+        left_rate = float(np.mean([m["firing_rate_hz"] for m in left_m])) if left_m else 0.0
+        right_rate = float(np.mean([m["firing_rate_hz"] for m in right_m])) if right_m else 0.0
+        jump_rate = float(np.max([m["firing_rate_hz"] for m in jump_m])) if jump_m else 0.0
+
+        jump_active = bool(jump_rate > 0.0 or has_threat)
+        top_motor = motor_outputs[0]["cell_type"] if motor_outputs else None
+        recruited = sum(1 for m in motor_outputs if m["firing_rate_hz"] > 0)
 
         # Actualizar telemetría BANC
         self.banc_telemetry = {
             "active_mode": "banc",
             "circuit_id": self.circuit_id,
             "motor_rate_hz": motor_rate,
+            "left_motor_rate_hz": left_rate,
+            "right_motor_rate_hz": right_rate,
+            "jump_motor_rate_hz": jump_rate,
             "jump_motor_active": jump_active,
             "top_active_motor_neuron": top_motor,
             "total_spikes": total_spikes,
             "recruited_motor_count": recruited
         }
 
-        # Generar acción física
+        # Generar acción física con dirección decodificada
+        diff_mot = right_rate - left_rate if (right_rate + left_rate) > 0.01 else (lateral_drive_hz / 50.0)
+        steer_yaw = float(np.clip(diff_mot, -1.0, 1.0))
+
         if jump_active or (has_threat and motor_rate > 0.1):
             action_state = ActionState.ESCAPE_JUMP
             fwd = 0.2
-            yaw = 0.0
+            yaw = steer_yaw * 1.5
             wbf = 210.0
             escape = True
-        elif motor_rate > 0.2 or forward_drive_hz > 50.0:
+        elif motor_rate > 0.2 or base_drive > 30.0:
             action_state = ActionState.WALKING
-            fwd = min(1.0, motor_rate / 5.0)
-            yaw = 0.0
+            fwd = min(1.0, max(0.2, motor_rate / 5.0))
+            yaw = steer_yaw
             wbf = 0.0
             escape = False
         else:

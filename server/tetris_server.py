@@ -142,35 +142,71 @@ def _process_neural_step(
     t0 = time.perf_counter()
 
     if getattr(fly, "connectome_mode", "flywire_brain") == "banc":
-        l_arr = np.asarray(left_eye, dtype=np.float32) if left_eye else np.zeros(120, dtype=np.float32)
-        r_arr = np.asarray(right_eye, dtype=np.float32) if right_eye else np.zeros(120, dtype=np.float32)
+        l_arr = np.asarray(left_eye, dtype=np.float32) if left_eye else np.zeros(84, dtype=np.float32)
+        r_arr = np.asarray(right_eye, dtype=np.float32) if right_eye else np.zeros(84, dtype=np.float32)
         mean_l = float(np.mean(l_arr)) if len(l_arr) else 0.0
         mean_r = float(np.mean(r_arr)) if len(r_arr) else 0.0
+        diff_lr = mean_l - mean_r
 
-        has_threat = (mean_l > 0.3 or mean_r > 0.3)
-        threats = [{"x": 300.0, "y": 300.0, "speed": 10.0}] if has_threat else []
-        fwd_drive = (mean_l + mean_r) * 60.0
+        # Detección de peligro por acumulación en filas inferiores
+        bottom_l = float(np.mean(l_arr[-24:])) if len(l_arr) >= 24 else mean_l
+        bottom_r = float(np.mean(r_arr[-24:])) if len(r_arr) >= 24 else mean_r
+        danger_level = max(bottom_l, bottom_r)
 
-        action = fly.step(threats=threats, forward_drive_hz=fwd_drive, trial_duration_ms=40.0)
+        # Neuromodulación por aversión / dopamina negativa
+        da_level = round(float(fly.dopamine_level), 3)
+        arousal = float(np.clip(max(0.0, -da_level * 1.5), 0.0, 1.8))
+        has_threat = (danger_level > 0.38 or arousal > 0.35)
+
+        lateral_drive = diff_lr * 90.0
+        forward_drive = max(10.0, (mean_l + mean_r) * 60.0)
+        aversive_drive = arousal * 120.0 + (danger_level * 60.0)
+
+        threats = [{"x": 300.0, "y": 300.0, "speed": 15.0}] if has_threat else []
+        action = fly.step(
+            threats=threats,
+            forward_drive_hz=forward_drive,
+            lateral_drive_hz=lateral_drive,
+            aversive_drive_hz=aversive_drive,
+            trial_duration_ms=40.0
+        )
 
         m_rate = fly.banc_telemetry.get("motor_rate_hz", 0.0)
-        jump_active = fly.banc_telemetry.get("jump_motor_active", False)
+        l_rate = fly.banc_telemetry.get("left_motor_rate_hz", 0.0)
+        r_rate = fly.banc_telemetry.get("right_motor_rate_hz", 0.0)
+        jump_rate = fly.banc_telemetry.get("jump_motor_rate_hz", 0.0)
+        jump_active = bool(fly.banc_telemetry.get("jump_motor_active", False) or action.escape_jump or arousal > 0.4)
 
-        score_left = max(0.01, mean_l * 4.0)
-        score_right = max(0.01, mean_r * 4.0)
-        score_rot = max(0.01, 3.5 if jump_active else 0.2)
-        score_drop = max(0.01, min(3.0, m_rate * 0.5))
+        # Cálculo biológico de puntuaciones motoras con amplio rango dinámico
+        panic_jitter = (np.random.random() - 0.5) * arousal * 2.0
+        score_left = max(0.05, 0.7 + (mean_l * 7.0) + (l_rate * 0.15) + max(0.0, diff_lr * 12.0) + max(0.0, panic_jitter))
+        score_right = max(0.05, 0.7 + (mean_r * 7.0) + (r_rate * 0.15) + max(0.0, -diff_lr * 12.0) + max(0.0, -panic_jitter))
+        score_rot = max(0.05, (7.5 if jump_active else 0.3) + (jump_rate * 0.25) + (arousal * 5.0))
+
+        # Inhibición de caída rápida ante aversión/pánico
+        drop_inhibition = 1.0 / (1.0 + arousal * 5.5 + (3.0 if danger_level > 0.35 else 0.0))
+        score_drop = max(0.05, (1.2 + (m_rate * 0.2) + ((mean_l + mean_r) * 2.5)) * drop_inhibition)
 
         scores = np.array([score_left, score_right, score_rot, score_drop], dtype=np.float32)
-        exp_scores = np.exp(scores - np.max(scores))
+        temp = float(np.clip(0.75 + arousal * 1.3, 0.4, 3.2))
+        exp_scores = np.exp((scores - np.max(scores)) / temp)
         probs = (exp_scores / np.sum(exp_scores)).tolist()
-        act_idx = int(np.argmax(probs))
+
+        # Selección estocástica con ruleta (evita trabarse en una sola tecla)
+        r = float(np.random.random())
+        accum = 0.0
+        act_idx = 3
+        for i, p in enumerate(probs):
+            accum += p
+            if r <= accum:
+                act_idx = i
+                break
 
         elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         return {
             "type": "tetris_motor",
             "mode": "banc",
-            "action": act_idx,
+            "action": int(act_idx),
             "probabilities": [round(float(p), 4) for p in probs],
             "p9_left": round(float(probs[0]), 3),
             "p9_right": round(float(probs[1]), 3),
@@ -178,12 +214,12 @@ def _process_neural_step(
             "drop": round(float(probs[3]), 3),
             "fwd": round(float(action.forward_thrust), 3),
             "yaw": round(float(action.turn_yaw), 3),
-            "escape": bool(action.escape_jump),
-            "aversive_arousal": 0.0,
-            "ppl1_act": 0.0,
-            "avoid_act": 0.0,
+            "escape": bool(action.escape_jump or jump_active),
+            "aversive_arousal": round(arousal, 3),
+            "ppl1_act": round(arousal, 4),
+            "avoid_act": round(danger_level, 4),
             "spikes_count": int(fly.banc_telemetry.get("total_spikes", 0)),
-            "dopamine_level": round(float(getattr(fly, "dopamine_level", 0.0)), 3),
+            "dopamine_level": da_level,
             "compute_ms": elapsed_ms,
         }
 
@@ -239,7 +275,9 @@ def _process_neural_step(
     avoid_indices = getattr(fly.topology, 'mbon_avoid_indices', np.array([], dtype=np.int32))
     avoid_act = float(np.mean(fly.engine.firing_rates[avoid_indices])) if len(avoid_indices) > 0 else 0.0
 
-    arousal = float(getattr(fly.engine, 'aversive_arousal', 0.0))
+    da_level = round(float(fly.dopamine_level), 3)
+    eng_arousal = float(getattr(fly.engine, 'aversive_arousal', 0.0))
+    arousal = max(eng_arousal, float(np.clip(-da_level * 1.5, 0.0, 1.8)))
 
     # 5. Calcular puntuaciones de activación para cada canal motor de Tetris
     # En estado de alarma/aversión biológica (sobresalto por castigo):
@@ -250,7 +288,7 @@ def _process_neural_step(
 
     score_left = max(0.01, p9_l * 3.5 + dna_l * 4.0 + max(0.0, -yaw) * 1.5 + (panic_left * arousal * 1.8))
     score_right = max(0.01, p9_r * 3.5 + dna_r * 4.0 + max(0.0, yaw) * 1.5 + (panic_right * arousal * 1.8))
-    score_rot = max(0.01, gf_act * 5.0 + (2.5 if escape else 0.0) + abs(yaw) * 2.0 + (arousal * 4.0 + ppl1_act * 5.0))
+    score_rot = max(0.01, gf_act * 6.0 + (3.5 if escape else 0.0) + abs(yaw) * 2.0 + (arousal * 6.0 + ppl1_act * 5.0))
 
     # Caída rápida reprimida por la aversión
     drop_inhibition = 1.0 / (1.0 + arousal * 4.0 + avoid_act * 3.0)

@@ -188,6 +188,77 @@ class BANCCircuitManager:
 
         return circuit_data
 
+    def extract_sensorimotor_circuit(
+        self,
+        synapse_threshold: int = 3,
+        force_recompute: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Extract the complete whole-CNS sensorimotor integration circuit:
+        - DNp01 (Giant Fiber Left & Right, escape jump TTMn / DLMn)
+        - DNp09 (P9 Left & Right, walking steering & forward drive)
+        -> Thoracic interneurons -> Leg & Jump motor neurons.
+        """
+        cache_path = self.cache_dir / f"sensorimotor_thresh_{synapse_threshold}.json"
+        if cache_path.exists() and not force_recompute:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+
+        meta = self._get_meta()
+        edge = pd.read_feather(self.edge_file)
+
+        all_dns = [
+            "720575941566493280", "720575941566493281",  # DNp01 GF
+            "720575941566493282", "720575941433155799",  # DNp09 P9
+        ]
+
+        h1_edges = edge[edge["pre"].isin(all_dns) & (edge["count"] >= synapse_threshold)]
+        h1_targets = set(h1_edges["post"].unique())
+        h1_meta = meta.loc[[i for i in h1_targets if i in meta.index]]
+        vnc_intermediaries = set(
+            h1_meta[
+                h1_meta["region"] == "ventral_nerve_cord"
+            ].index
+        )
+
+        h2_edges = edge[edge["pre"].isin(vnc_intermediaries) & (edge["count"] >= synapse_threshold)]
+        h2_meta = meta.loc[[i for i in set(h2_edges["post"]) if i in meta.index]]
+        motor_targets = set(h2_meta[h2_meta["super_class"] == "motor"].index)
+
+        active_ids = set(all_dns) | vnc_intermediaries | motor_targets
+        circuit_edges_df = edge[
+            edge["pre"].isin(active_ids) &
+            edge["post"].isin(active_ids) &
+            (edge["count"] >= synapse_threshold)
+        ]
+
+        connected_nodes = set(circuit_edges_df["pre"]) | set(circuit_edges_df["post"]) | set(all_dns)
+        final_node_ids = sorted(list(connected_nodes))
+
+        final_edges_df = circuit_edges_df[
+            circuit_edges_df["pre"].isin(connected_nodes) &
+            circuit_edges_df["post"].isin(connected_nodes)
+        ]
+
+        circuit_data = self._build_circuit_payload(
+            circuit_name="Whole-CNS Sensorimotor Locomotor & Escape Circuit",
+            circuit_id="sensorimotor",
+            stimulated_ids=all_dns,
+            node_ids=final_node_ids,
+            edges_df=final_edges_df,
+            meta=meta,
+            synapse_threshold=synapse_threshold,
+            description=(
+                "Unified whole-CNS sensorimotor circuit combining Giant Fiber (DNp01) jump/flight escape "
+                "and P9 (DNp09) directional walking networks descending into the thoracic ganglion (BANC v888)."
+            )
+        )
+
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump(circuit_data, f, indent=2)
+
+        return circuit_data
+
     def _build_circuit_payload(
         self,
         circuit_name: str,

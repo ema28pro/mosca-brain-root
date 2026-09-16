@@ -152,26 +152,19 @@ def _process_neural_step(
         mean_r = float(np.mean(r_arr)) if len(r_arr) else 0.0
         diff_lr = mean_l - mean_r
 
-        # Detección de peligro por acumulación en filas inferiores
-        bottom_l = float(np.mean(l_arr[-24:])) if len(l_arr) >= 24 else mean_l
-        bottom_r = float(np.mean(r_arr[-24:])) if len(r_arr) >= 24 else mean_r
-        danger_level = max(bottom_l, bottom_r)
-
-        # Neuromodulación por aversión / dopamina negativa
+        # Visión direccional normal (sin amenazas artificiales durante el juego regular)
         da_level = round(float(fly.dopamine_level), 3)
-        arousal = float(np.clip(max(0.0, -da_level * 1.0), 0.0, 1.0))
-        has_threat = (danger_level > 0.42 or arousal > 0.5)
+        arousal = float(np.clip(max(0.0, -da_level * 0.8), 0.0, 1.0))
 
         lateral_drive = diff_lr * 80.0
         forward_drive = max(10.0, (mean_l + mean_r) * 50.0)
-        aversive_drive = arousal * 80.0 + (danger_level * 40.0)
 
-        threats = [{"x": 300.0, "y": 300.0, "speed": 15.0}] if has_threat else []
+        # En Tetris regular NO hay depredadores ni amenazas artificiales
         action = fly.step(
-            threats=threats,
+            threats=[],
             forward_drive_hz=forward_drive,
             lateral_drive_hz=lateral_drive,
-            aversive_drive_hz=aversive_drive,
+            aversive_drive_hz=0.0,
             trial_duration_ms=40.0
         )
 
@@ -181,18 +174,14 @@ def _process_neural_step(
         jump_rate = fly.banc_telemetry.get("jump_motor_rate_hz", 0.0)
         jump_active = bool(fly.banc_telemetry.get("jump_motor_active", False) or action.escape_jump)
 
-        # Cálculo biológico de puntuaciones motoras equilibradas
-        panic_jitter = (np.random.random() - 0.5) * arousal * 2.0
-        score_left = max(0.05, 0.9 + (mean_l * 6.0) + (l_rate * 0.1) + max(0.0, diff_lr * 8.0) + max(0.0, panic_jitter))
-        score_right = max(0.05, 0.9 + (mean_r * 6.0) + (r_rate * 0.1) + max(0.0, -diff_lr * 8.0) + max(0.0, -panic_jitter))
-        score_rot = max(0.05, (3.2 if jump_active else 0.35) + (jump_rate * 0.15) + (arousal * 2.0))
-
-        # Inhibición de caída rápida ante aversión/pánico
-        drop_inhibition = 1.0 / (1.0 + arousal * 3.0 + (2.0 if danger_level > 0.4 else 0.0))
-        score_drop = max(0.05, (1.2 + (m_rate * 0.15) + ((mean_l + mean_r) * 2.0)) * drop_inhibition)
+        # Puntuaciones motoras basadas en navegación visual limpia y equilibrada
+        score_left = max(0.05, 0.9 + (mean_l * 6.0) + (l_rate * 0.1) + max(0.0, diff_lr * 8.0))
+        score_right = max(0.05, 0.9 + (mean_r * 6.0) + (r_rate * 0.1) + max(0.0, -diff_lr * 8.0))
+        score_rot = max(0.05, (2.8 if jump_active else 0.4) + (jump_rate * 0.15))
+        score_drop = max(0.05, 1.2 + (m_rate * 0.15) + ((mean_l + mean_r) * 2.0))
 
         scores = np.array([score_left, score_right, score_rot, score_drop], dtype=np.float32)
-        temp = float(np.clip(0.8 + arousal * 0.8, 0.5, 2.5))
+        temp = 0.85
         exp_scores = np.exp((scores - np.max(scores)) / temp)
         probs = (exp_scores / np.sum(exp_scores)).tolist()
 

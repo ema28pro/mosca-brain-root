@@ -147,7 +147,7 @@ class BANCAgent(BaseFlyAgent):
         4. Decodifica la respuesta motora real (salto TTMn, vuelo DLMn, flexión/extensión de patas).
         """
         threats = threats or []
-        has_threat = len(threats) > 0 or aversive_drive_hz > 10.0 or self._dopamine_level < -0.3
+        has_threat = len(threats) > 0 or aversive_drive_hz > 50.0
 
         # Si hay amenaza o aversión, inyectar alta frecuencia al circuito de escape (DNp01)
         base_drive = max(forward_drive_hz, abs(lateral_drive_hz))

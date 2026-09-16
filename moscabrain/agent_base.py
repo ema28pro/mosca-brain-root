@@ -116,6 +116,16 @@ class BaseFlyAgent(ABC):
         """Alias para castigo/estímulo aversivo."""
         return self.punish(amount=amount, reason=reason)
 
+    @abstractmethod
+    def pain(self, intensity: float = 1.0, reason: str = "shock_nociceptivo") -> Dict[str, Any]:
+        """
+        Estimulación nociceptiva aguda (dolor/choque físico):
+        Dispara simultáneamente:
+        1. Reflejo motor inmediato de escape y sobresalto (Giant Fiber / motoneuronas torácicas).
+        2. Señal aversiva dopaminérgica (PPL1) para consolidar memoria de evitación aversiva.
+        """
+        pass
+
     def start_feeding(self):
         """Inicia el programa motor de alimentación y extensión de probóscide."""
         self.is_feeding = True

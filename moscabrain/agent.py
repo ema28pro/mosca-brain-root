@@ -4,7 +4,7 @@ Elimina cualquier circuito sintético y conecta la visión hexagonal, el olfato
 y la dopamina directamente a las 15.091.983 sinapsis de FlyWire.
 """
 
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 import numpy as np
 
 from .agent_base import BaseFlyAgent
@@ -94,6 +94,29 @@ class FlyWireAgent(BaseFlyAgent):
     def aversion(self, amount: float = 1.0, reason: str = "aversion"):
         """Inyecta una señal aversiva / castigo al clúster PPL1 de la mosca (alias de punish)."""
         return self.punish(amount=amount, reason=reason)
+
+    def pain(self, intensity: float = 1.0, reason: str = "shock_nociceptivo") -> Dict[str, Any]:
+        """
+        Estimulación nociceptiva biofísica directa en FlyWire:
+        1. Inyecta castigo dopaminérgico PPL1.
+        2. Provoca una despolarización aguda de las 104 neuronas LC4 y Giant Fiber (DNp01).
+        3. Fuerza el reflejo de sobresalto/huida en la dinámica del conectoma.
+        """
+        pain_amt = max(0.2, float(intensity))
+        self.punish(amount=pain_amt, reason=reason)
+
+        # Inyectar corriente nociceptiva/looming aguda a LC4 y Giant Fiber
+        self.engine.inject_looming_input(1.0)
+        self.engine.step()
+
+        return {
+            "mode": "flywire_brain",
+            "type": "PAIN_NOCICEPTION",
+            "intensity": pain_amt,
+            "dopamine_level": self.dopamine.current_level,
+            "escape_triggered": True,
+            "total_punishments": self.dopamine.total_punishments,
+        }
 
     def stimulate_sugar(self, intensity: float = 1.5):
         """Estimula directamente las neuronas gustativas de azúcar (Sugar GRNs) reales."""

@@ -131,6 +131,31 @@ class BANCAgent(BaseFlyAgent):
         self._dopamine_level = max(-2.0, self._dopamine_level - amount * 0.2)
         self._total_punishments += amount
 
+    def pain(self, intensity: float = 1.0, reason: str = "shock_nociceptivo") -> Dict[str, Any]:
+        """
+        Estimulación nociceptiva biofísica directa en BANC:
+        1. Inyecta castigo dopaminérgico PPL1.
+        2. Provoca una descarga inmediata en el circuito de escape LIF del Giant Fiber (DNp01).
+        3. Registra el reflejo motor espasmódico en las motoneuronas torácicas.
+        """
+        pain_amt = max(0.2, float(intensity))
+        self.punish(amount=pain_amt, reason=reason)
+
+        # Pulso LIF de alta frecuencia sobre las entradas sensoriales/descendentes de escape
+        sim_res = self.simulator.run_simulation(stim_rate=180.0, t_run=30.0)
+        jump_rate = sim_res["population_rates_hz"].get("motor_neurons", 0.0)
+        self._pending_shock = True
+
+        return {
+            "mode": "banc",
+            "type": "PAIN_NOCICEPTION",
+            "intensity": pain_amt,
+            "dopamine_level": self._dopamine_level,
+            "jump_motor_rate_hz": jump_rate,
+            "escape_triggered": True,
+            "total_punishments": self._total_punishments,
+        }
+
     def step(
         self,
         threats: Optional[List[Dict[str, Any]]] = None,

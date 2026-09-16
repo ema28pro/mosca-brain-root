@@ -109,6 +109,7 @@ async def trigger_reward(req: DopamineTriggerRequest):
 @app.post("/api/punish")
 async def trigger_punish(req: DopamineTriggerRequest):
     fly.punish(amount=req.amount, reason=req.reason)
+    fly._pending_shock = True
     return {
         "success": True,
         "type": "PUNISH_PPL1",
@@ -121,12 +122,23 @@ async def trigger_punish(req: DopamineTriggerRequest):
 @app.post("/api/aversion")
 async def trigger_aversion(req: DopamineTriggerRequest):
     fly.aversion(amount=req.amount, reason=req.reason)
+    fly._pending_shock = True
     return {
         "success": True,
         "type": "PUNISH_PPL1",
         "dopamine_level": round(float(fly.dopamine.current_level), 3),
         "total_rewards": round(float(fly.dopamine.total_rewards), 2),
         "total_punishments": round(float(fly.dopamine.total_punishments), 2),
+    }
+
+
+@app.post("/api/pain")
+async def trigger_pain(req: DopamineTriggerRequest):
+    res = fly.pain(intensity=req.amount, reason=req.reason)
+    fly._pending_shock = True
+    return {
+        "success": True,
+        **res
     }
 
 
@@ -160,11 +172,15 @@ def _process_neural_step(
         forward_drive = max(10.0, (mean_l + mean_r) * 50.0)
 
         # En Tetris regular NO hay depredadores ni amenazas artificiales
+        # Si hubo un castigo reciente (dopamina negativa o aversión explícita), se transmite biológicamente como aversive_drive
+        aversive_hz = 120.0 if (getattr(fly, "_pending_shock", False)) else 0.0
+        fly._pending_shock = False
+
         action = fly.step(
             threats=[],
             forward_drive_hz=forward_drive,
             lateral_drive_hz=lateral_drive,
-            aversive_drive_hz=0.0,
+            aversive_drive_hz=aversive_hz,
             trial_duration_ms=40.0
         )
 
@@ -174,11 +190,12 @@ def _process_neural_step(
         jump_rate = fly.banc_telemetry.get("jump_motor_rate_hz", 0.0)
         jump_active = bool(fly.banc_telemetry.get("jump_motor_active", False) or action.escape_jump)
 
-        # Puntuaciones motoras basadas en navegación visual limpia y equilibrada
-        score_left = max(0.05, 0.9 + (mean_l * 6.0) + (l_rate * 0.1) + max(0.0, diff_lr * 8.0))
-        score_right = max(0.05, 0.9 + (mean_r * 6.0) + (r_rate * 0.1) + max(0.0, -diff_lr * 8.0))
-        score_rot = max(0.05, (2.8 if jump_active else 0.4) + (jump_rate * 0.15))
-        score_drop = max(0.05, 1.2 + (m_rate * 0.15) + ((mean_l + mean_r) * 2.0))
+        # Puntuaciones motoras decodificadas directamente de las motoneuronas del VNC de BANC:
+        # Se mide la actividad de las motoneuronas torácicas reales, NO la retina directamente
+        score_left = max(0.05, 0.4 + (l_rate * 2.5) + max(0.0, -action.turn_yaw * 2.5))
+        score_right = max(0.05, 0.4 + (r_rate * 2.5) + max(0.0, action.turn_yaw * 2.5))
+        score_rot = max(0.05, (2.6 if jump_active else 0.35) + (jump_rate * 1.8))
+        score_drop = max(0.05, 0.6 + (m_rate * 1.5) + (action.forward_thrust * 1.8))
 
         scores = np.array([score_left, score_right, score_rot, score_drop], dtype=np.float32)
         temp = 0.85
@@ -195,6 +212,8 @@ def _process_neural_step(
                 act_idx = i
                 break
 
+        fly._last_action = act_idx
+
         elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         return {
             "type": "tetris_motor",
@@ -210,7 +229,7 @@ def _process_neural_step(
             "escape": bool(action.escape_jump or jump_active),
             "aversive_arousal": round(arousal, 3),
             "ppl1_act": round(arousal, 4),
-            "avoid_act": round(danger_level, 4),
+            "avoid_act": round(arousal, 4),
             "spikes_count": int(fly.banc_telemetry.get("total_spikes", 0)),
             "dopamine_level": da_level,
             "compute_ms": elapsed_ms,
@@ -397,6 +416,7 @@ async def tetris_websocket_endpoint(websocket: WebSocket):
                 amt = float(msg.get("amount", 1.0))
                 reason = msg.get("reason", "game_over")
                 fly.aversion(amount=amt, reason=reason)
+                fly._pending_shock = True
                 await websocket.send_json({
                     "type": "dopamine_update",
                     "event": "PUNISH_PPL1",
@@ -405,6 +425,17 @@ async def tetris_websocket_endpoint(websocket: WebSocket):
                     "dopamine_level": round(float(fly.dopamine.current_level), 3),
                     "total_rewards": round(float(fly.dopamine.total_rewards), 2),
                     "total_punishments": round(float(fly.dopamine.total_punishments), 2),
+                })
+
+            elif cmd in ("pain", "shock", "PAIN_NOCICEPTION"):
+                amt = float(msg.get("amount", 1.0))
+                reason = msg.get("reason", "shock_nociceptivo")
+                pain_res = fly.pain(intensity=amt, reason=reason)
+                fly._pending_shock = True
+                await websocket.send_json({
+                    "type": "pain_shock",
+                    "event": "PAIN_NOCICEPTION",
+                    **pain_res
                 })
 
             elif cmd == "reset":

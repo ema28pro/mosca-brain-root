@@ -67,31 +67,32 @@ export const TopNav: React.FC<TopNavProps> = ({
       <div className="header-status">
         <div className={`connection-badge ${!isConnected ? "disconnected" : ""}`}>
           <span className="status-dot"></span>
-          <span>{isConnected ? fpsText : "Desconectado"}</span>
+          <span className="badge-text">{isConnected ? fpsText : "Desconectado"}</span>
         </div>
 
-        {/* Medida DEBAJO de cada etiqueta */}
-        <div className="stat-box">
+        {/* Métricas compactas sin caja para diseño limpio */}
+        <div className="stat-item stat-item-compute">
           <span className="stat-label">Cómputo</span>
           <span className="stat-value cyan">{computeMs} ms</span>
         </div>
 
-        <div className="stat-box">
+        <div className="stat-item stat-item-connectome">
           <span className="stat-label">Conectoma</span>
-          <span className="stat-value purple">138.639 N · 15.09M S</span>
+          <span className="stat-value purple">138.6k · 15.09M</span>
         </div>
 
-        <div className="stat-box">
+        <div className="stat-item stat-item-spikes">
           <span className="stat-label">Espigas</span>
           <span className="stat-value">{spikes}</span>
         </div>
 
-        <div className="stat-box">
+        <div className="stat-item stat-item-dopamine">
           <span className="stat-label">Dopamina</span>
           <span className="stat-value green">{dopamine}</span>
         </div>
 
-        <div className="stat-box">
+        {/* Estado con ancho estrictamente fijo para eliminar parpadeo */}
+        <div className="stat-box stat-box-state">
           <span className="stat-label">Estado</span>
           <span className={`stat-value ${stateClass}`} title={displayState}>
             {displayState}
@@ -99,14 +100,29 @@ export const TopNav: React.FC<TopNavProps> = ({
         </div>
       </div>
 
+
       <div className="header-actions">
+        <a
+          href="/banc/"
+          className="btn btn-banc-link"
+          style={{
+            borderColor: "rgba(224, 159, 62, 0.4)",
+            color: "#e09f3e",
+            textDecoration: "none",
+            background: "rgba(224, 159, 62, 0.08)",
+          }}
+          title="Abrir Simulador BANC (Cerebro + VNC)"
+        >
+          <span>BANC VNC &rarr;</span>
+        </a>
+
         <button
           className="btn btn-dopamine"
           onClick={onRewardManual}
           title="Activa el clúster PAM de dopamina (+1.0)"
         >
-          <Sparkles size={13} />
-          <span>+ Dopamina (+1.0)</span>
+          <Sparkles size={11} />
+          <span>+ Dopamina</span>
         </button>
 
         <button
@@ -114,10 +130,11 @@ export const TopNav: React.FC<TopNavProps> = ({
           onClick={onPunishManual}
           title="Activa el clúster PPL1 aversivo (-0.5)"
         >
-          <Zap size={13} />
-          <span>- Aversión (-0.5)</span>
+          <Zap size={11} />
+          <span>- Aversión</span>
         </button>
       </div>
     </header>
   );
 };
+

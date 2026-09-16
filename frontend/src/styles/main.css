@@ -46,46 +46,52 @@ body {
 }
 
 /* ==========================================================================
-   BARRA SUPERIOR (HEADER)
+   BARRA SUPERIOR (HEADER) - TAMAÑOS FIJOS SIN PARPADEO NI JITTER
    ========================================================================== */
 .top-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 6px 14px;
   background: #0b0f17;
   border-bottom: 1px solid var(--panel-border);
   z-index: 100;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  height: 48px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   text-decoration: none;
   color: inherit;
+  flex-shrink: 0;
 }
 
 .brand-icon-box {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   background: var(--accent-cyan-dim);
   border: 1px solid rgba(56, 189, 248, 0.3);
   color: var(--accent-cyan);
   border-radius: var(--radius-sharp);
+  flex-shrink: 0;
 }
 
 .brand-text h1 {
-  font-size: 16px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: 0.8px;
-  line-height: 1.1;
+  line-height: 1;
   font-family: var(--font-mono);
+  margin: 0;
 }
 
 .brand-text .accent {
@@ -93,31 +99,45 @@ body {
 }
 
 .brand-text .subtitle {
-  font-size: 10px;
+  font-size: 8.5px;
   color: var(--text-muted);
   display: block;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
+  margin-top: 2px;
+  white-space: nowrap;
 }
 
-/* MÉTRICAS DE LA BARRA SUPERIOR: VALOR DEBAJO DE LA ETIQUETA */
+/* MÉTRICAS DE LA BARRA SUPERIOR: TAMAÑO FIJO Y COMPACTO */
 .header-status {
   display: flex;
-  align-items: stretch;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .connection-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  justify-content: center;
+  gap: 5px;
+  font-size: 9.5px;
   font-family: var(--font-mono);
-  padding: 4px 10px;
+  padding: 2px 6px;
   border-radius: var(--radius-sharp);
   background: rgba(16, 185, 129, 0.08);
   border: 1px solid rgba(16, 185, 129, 0.3);
   color: var(--accent-green);
+  width: 90px;
+  height: 28px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.connection-badge .badge-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .connection-badge.disconnected {
@@ -127,17 +147,18 @@ body {
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   background: var(--accent-green);
   border-radius: var(--radius-sharp);
-  box-shadow: 0 0 6px var(--accent-green);
+  box-shadow: 0 0 5px var(--accent-green);
   animation: pulse 2s infinite;
+  flex-shrink: 0;
 }
 
 .connection-badge.disconnected .status-dot {
   background: var(--accent-red);
-  box-shadow: 0 0 6px var(--accent-red);
+  box-shadow: 0 0 5px var(--accent-red);
 }
 
 @keyframes pulse {
@@ -145,20 +166,37 @@ body {
   50% { opacity: 0.4; transform: scale(0.9); }
 }
 
-/* CAJAS DE MEDICIÓN EN LA BARRA SUPERIOR (VERTICALES: LABEL ARRIBA, MEDIDA ABAJO) */
-.stat-box {
+/* MÉTRICAS SIN CAJA (Transparentes y limpias) */
+.stat-item {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: var(--panel-surface);
-  padding: 4px 10px;
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-sharp);
-  min-width: 90px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
+.stat-item-compute {
+  width: 58px;
+}
+
+.stat-item-connectome {
+  width: 96px;
+}
+
+.stat-item-spikes {
+  width: 52px;
+}
+
+.stat-item-dopamine {
+  width: 54px;
+}
+
+.stat-item .stat-label,
 .stat-box .stat-label {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--text-muted);
@@ -167,57 +205,88 @@ body {
   line-height: 1;
 }
 
+.stat-item .stat-value,
 .stat-box .stat-value {
-  font-size: 12px;
+  font-size: 11px;
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--accent-gold);
-  margin-top: 3px;
-  line-height: 1.2;
+  margin-top: 2px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.stat-item .stat-value.cyan,
 .stat-box .stat-value.cyan {
   color: var(--accent-cyan);
 }
 
+.stat-item .stat-value.green,
 .stat-box .stat-value.green {
   color: var(--accent-green);
 }
 
+.stat-item .stat-value.purple,
 .stat-box .stat-value.purple {
   color: var(--accent-purple);
 }
 
-.stat-box .stat-value.state {
-  color: var(--text-main);
-  max-width: 140px;
+/* CAJA DE ESTADO CON ANCHO ESTRICTAMENTE FIJO PARA ELIMINAR EL PARPADEO */
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--panel-surface);
+  padding: 2px 7px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sharp);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.stat-box-state {
+  width: 130px; /* ANCHO ESTRICTAMENTE FIJO: NUNCA SE EXPANDE NI SE ENCOGE */
+  height: 28px;
+}
+
+.stat-box-state .stat-value {
+  font-size: 9.5px;
+  width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: block;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
-/* BOTONES INSTRUMENTALES (BORDES RECTOS, SIN EMOJIS) */
+/* BOTONES INSTRUMENTALES MÁS COMPACTOS */
 .btn {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.03em;
-  padding: 6px 12px;
+  padding: 4px 8px;
+  height: 26px;
   border-radius: var(--radius-sharp);
   border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   transition: all 0.15s ease;
   user-select: none;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
+
 
 .btn-dopamine {
   background: rgba(16, 185, 129, 0.15);
